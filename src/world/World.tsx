@@ -1,7 +1,7 @@
 'use client';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { PCFShadowMap } from 'three';
 import Island from './environment/Island';
 import {
@@ -49,7 +49,7 @@ export interface WorldProps {
   reducedMotion: boolean;
   lowQuality: boolean;
   zoom: number;
-  controls: MutableRefObject<Controls>;
+  controls: RefObject<Controls>;
   onNear: (id: DestinationId | null) => void;
   onPosition: (p: Point) => void;
   onSlow: () => void;
@@ -148,6 +148,7 @@ export default function World({
         onClick={(e) => {
           if (active && e.delta < 8) {
             e.stopPropagation();
+            // oxlint-disable-next-line react/react-compiler -- Pointer input is passed to the imperative frame controller through a mutable ref.
             controls.current.target = { x: e.point.x, z: e.point.z };
           }
         }}

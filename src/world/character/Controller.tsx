@@ -1,4 +1,5 @@
-import { useEffect, useRef, type MutableRefObject } from 'react';
+/* oxlint-disable react/react-compiler -- The frame loop intentionally mutates shared input refs and Three.js transforms outside React rendering. React state must not update on every frame. */
+import { useEffect, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import Avatar from './Avatar';
@@ -25,7 +26,7 @@ export default function Controller({
 }: {
   active: boolean;
   reducedMotion: boolean;
-  controls: MutableRefObject<Controls>;
+  controls: RefObject<Controls>;
   onNear: (id: DestinationId | null) => void;
   onPosition: (p: Point) => void;
 }) {

@@ -10,6 +10,7 @@ Use Node.js **22.13 or newer** (Node 24 LTS recommended) and npm. The lockfile i
 npm install
 npm run dev
 npm run typecheck
+npm run lint
 npm test
 npm run build
 npm start

@@ -1,4 +1,5 @@
 'use client';
+/* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- This named world section is an intentional keyboard movement surface, with an adjacent semantic text alternative. */
 import {
   lazy,
   Suspense,
@@ -24,6 +25,7 @@ import {
   Leaf,
   VolumeX,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -63,9 +65,10 @@ export default function Portfolio() {
     jump: null,
     position: { x: spawn[0], z: spawn[1] },
   });
-  const stage = useRef<HTMLDivElement>(null),
+  const stage = useRef<HTMLElement>(null),
     lastFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    // oxlint-disable-next-line react/react-compiler -- Detect browser capabilities after hydration, keeping the server and initial client markup identical.
     setReady(true);
     setAvailable(typeof WebGL2RenderingContext !== 'undefined');
   }, []);
@@ -113,14 +116,14 @@ export default function Portfolio() {
         Skip to readable portfolio
       </a>
       <header className="site-header">
-        <a className="wordmark" href="/" aria-label="Omar Khaled home">
+        <Link className="wordmark" href="/" aria-label="Omar Khaled home">
           <span className="monogram">
             ok<span>.</span>
           </span>
           <span>
             OMAR KHALED<small>SOFTWARE ENGINEER</small>
           </span>
-        </a>
+        </Link>
         <div className="header-actions">
           <span className="phase-tag">
             <i /> WORLD IN PROGRESS · 01
@@ -134,11 +137,10 @@ export default function Portfolio() {
           </Button>
         </div>
       </header>
-      <div
+      <section
         ref={stage}
         className="world-canvas"
         tabIndex={entered ? 0 : -1}
-        role="region"
         aria-label="Interactive engineering world. Move with WASD or arrow keys. Click ground to walk. Press E near a landmark."
         data-position={`${position.x.toFixed(2)},${position.z.toFixed(2)}`}
       >
@@ -182,7 +184,7 @@ export default function Portfolio() {
             </div>
           )
         )}
-      </div>
+      </section>
       <section className="intro-copy">
         <p className="eyebrow">
           <span className="tiny-line" /> A SMALL DIGITAL WORLD

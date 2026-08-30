@@ -208,8 +208,8 @@ Deployment proceeds only after a successful production build. A private Sites re
 
 ## Current next actions
 
-1. Implement the authorized Phase 1 world foundation using only neutral professional-content placeholders.
-2. Verify the implemented foundation with desktop/mobile browser checks, typecheck, movement tests, and a production build. Record any deployment or device-test limitations.
+1. Phase 1 world foundation is implemented with neutral professional-content placeholders: narrative island, centerpiece workshop, generic human avatar, movement, navigation, Quick View, and a local agent-loop preview.
+2. Desktop/mobile viewport checks, typecheck, all six movement tests, and the production build have passed. `site/docs/QA.md` records the exact scope and remaining real-device, reduced-motion, and forced WebGL-failure checks. Private deployment is the delivery step; this does not authorize a public launch.
 3. When the CV is accessible, extract facts, build the provenance table, populate `portfolio.ts`, and only then implement professional content.
 
 No user design approval is required for routine implementation choices. CV availability blocks professional content, not Phase 1. Browser/build/deployment checks must be reported as unverified if runtime access prevents them.

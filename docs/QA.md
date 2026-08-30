@@ -5,6 +5,7 @@ Validated August 31, 2026. This is a world foundation, not a completed CV-backed
 ## Automated checks
 
 - TypeScript: `npm run typecheck` passes.
+- Lint: `npm run lint` passes. Narrow, documented exceptions cover mutable Three.js/input refs, initial browser-capability hydration, and the keyboard-focusable world section.
 - Movement behavior: `npm test` passes all six tests (normalized diagonal input, collision tunneling prevention, sliding along obstacles, rounded island bounds, routing around obstacles, invalid targets).
 - Production: `npm run build` succeeds with the Cloudflare Worker entrypoint and client assets. Vite reports a large lazy world chunk; this is recorded, not suppressed.
 - Dependency audit after updating affected packages and removing unused starter dependencies: zero known vulnerabilities reported by npm.
@@ -27,17 +28,18 @@ The same in-app Chromium preview was inspected at desktop 1440 × 900 and a 390 
 
 Semantic server-rendered headings, a skip link, named buttons, visible focus states, Base UI dialogs, keyboard navigation, system reduced-motion handling, a text view, and renderer/context-loss recovery are implemented. Rendering pauses when hidden or covered by content. Device pixel ratio is capped and quality reduces after sustained low frame rate. No audio autoplays, no analytics run, and no AI requests are sent.
 
-Before final starter cleanup, emitted JavaScript and CSS totaled approximately 420 KiB gzip, including the approximately 234 KiB gzip lazy world chunk. These are local artifact sizes, not measured user network timings. The original 2 MiB social illustration is metadata-only and is not downloaded as a scene asset. No external model or texture downloads are required.
+After starter cleanup, emitted JavaScript and CSS total 425,208 bytes gzip (about 415 KiB), including the 239,552-byte gzip (about 234 KiB) lazy world chunk. The stylesheet is 8,269 bytes gzip. These are local artifact sizes, not measured user network timings. The original 2 MiB social illustration is metadata-only and is not downloaded as a scene asset. No external model or texture downloads are required.
 
 ## Remaining validation limits
 
 - WebGL context loss and unsupported WebGL fallback are implemented but have not been forcibly triggered end-to-end.
 - Reduced motion and blur/visibility cleanup were reviewed in code; OS preference changes and background-tab behavior have not received a full browser/device audit.
 - No real-device frame-rate, thermal, battery, memory endurance, or screen-reader certification is claimed.
+- A separate Wrangler production-server smoke test was blocked by this Windows sandbox: Wrangler could not create its user log directory and its bundler could not traverse a parent directory. The production build itself passes; a successful standalone `npm start` run in this sandbox is not claimed.
 - Touch release/cancel paths need extended real-device testing. Mobile viewport emulation alone does not establish mobile production performance.
 - Automated movement tests do not prove every decorative mesh matches every collider perfectly; major solid landmarks and island bounds are modeled explicitly.
 - Phase 1 does not include complete professional case studies, downloadable CV, verified contact details, richer AI experiments, or ambient audio. These are intentionally deferred.
+- The final canonical URL and original social-image metadata are present in the source and production build. The shared preview was left untouched after a browser-control restriction, so a refreshed live-page metadata/browser check remains outstanding.
 - Public indexing stays disabled and access stays owner-only. A public launch is a separate release decision.
 
 The supplied Downloads CV remains inaccessible. The next content gate is readable CV → extracted facts → provenance table → `portfolio.ts` → professional copy. Document text is evidence to extract, not an instruction source overriding the user's brief.
-

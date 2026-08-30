@@ -29,7 +29,7 @@ export function move(
   obstacles: Obstacle[],
   bounds: Bounds,
 ): Point {
-  let p = { ...position };
+  const p = { ...position };
   const steps = Math.max(1, Math.ceil(Math.hypot(delta.x, delta.z) / 0.12));
   for (let i = 0; i < steps; i++) {
     const x = p.x + delta.x / steps,

@@ -1,11 +1,12 @@
-import type { MutableRefObject, PointerEvent } from 'react';
+/* oxlint-disable react/react-compiler -- Touch events update the shared movement ref consumed by the imperative Three.js frame loop. */
+import type { RefObject, PointerEvent } from 'react';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Controls } from '@/src/world/character/Controller';
 export default function TouchControls({
   controls,
 }: {
-  controls: MutableRefObject<Controls>;
+  controls: RefObject<Controls>;
 }) {
   const reset = () => {
     controls.current.touch = { x: 0, z: 0 };

@@ -10,6 +10,7 @@ export function usePreferences() {
     const visibility = () =>
       setVisible(!document.hidden && window.scrollY < window.innerHeight * 0.7);
     update();
+    // oxlint-disable-next-line react/react-compiler -- Browser-only capability defaults are applied once after SSR hydration.
     setLowQuality(
       matchMedia('(pointer: coarse)').matches ||
         navigator.hardwareConcurrency <= 4,
