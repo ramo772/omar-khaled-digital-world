@@ -11,7 +11,8 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test": "node --experimental-strip-types --no-warnings --test tests/*.test.mjs",
+    "verify:cv": "node --experimental-strip-types --no-warnings scripts/verify-provenance.mjs",
     "format": "oxfmt"
   },
   "dependencies": {
