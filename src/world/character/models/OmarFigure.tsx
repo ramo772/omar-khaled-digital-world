@@ -17,8 +17,8 @@ import type { AvatarModelProps } from '../avatar-contract';
  * Y-up, feet at y = 0, facing +Z. Omar's right side is -X.
  */
 const colors = {
-  skin: '#a86b4c',
-  skinShade: '#8f573b',
+  skin: '#9e6a4e',
+  skinShade: '#87573d',
   hair: '#1d1714',
   beard: '#241b17',
   frames: '#121212',

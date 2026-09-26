@@ -5,6 +5,7 @@ import { Grid2X2 } from 'lucide-react';
 import { identity } from '@/src/content/portfolio';
 import { destinationById, spawn, type DestinationId } from '@/src/data/world-map';
 import type { Controls } from '@/src/world/character/Controller';
+import { OWNS_KEYS } from '@/src/world/character/keys';
 import { usePreferences } from '@/src/hooks/usePreferences';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { detectWebGL } from '@/src/lib/webgl';
@@ -78,8 +79,11 @@ export default function Portfolio() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!active || !near || (e.target as HTMLElement)?.closest('button,a,input,textarea,select')) return;
-      if (e.key.toLowerCase() === 'e' || e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+      if (!active || !near || target?.closest(OWNS_KEYS)) return;
+      // Enter keeps its normal meaning on buttons and links; E always opens the nearby place.
+      const enter = e.key === 'Enter' && !target?.closest('button,a');
+      if (e.key.toLowerCase() === 'e' || enter) {
         e.preventDefault();
         openPlace(near);
       }

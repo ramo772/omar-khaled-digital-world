@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {};
+// Static export: `npm run build` writes a complete static site to dist/client
+// (HTML, JS, CSS, assets). No server, API routes or database are needed, so it
+// can be hosted on any static host (Cloudflare Pages, GitHub Pages, Netlify…).
+const nextConfig: NextConfig = { output: 'export' };
 
 export default nextConfig;

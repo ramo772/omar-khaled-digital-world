@@ -6,6 +6,7 @@ import Avatar from './Avatar';
 import { AVATAR, type AvatarMotion } from './avatar-contract';
 import { destinationById, obstacles, spawn, worldBounds, type DestinationId } from '@/src/data/world-map';
 import { move, normalize, route, turnToward, type Point } from '@/src/lib/movement';
+import { MOVE_KEYS, OWNS_KEYS } from './keys';
 
 export interface Controls {
   touch: Point;
@@ -16,7 +17,8 @@ export interface Controls {
 
 const SPEED = 3.3;
 const NEAR = 1.7;
-const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'];
+/** Heading that faces the (fixed-direction) camera; idle Omar turns to greet the visitor. */
+const FACE_VISITOR = Math.atan2(15, 24);
 
 /**
  * Owns input → movement → collision → heading. Knows nothing about how the
@@ -57,7 +59,8 @@ export default function Controller({
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (!active || (e.target as HTMLElement)?.closest('button,a,input,textarea,select,[contenteditable]')) return;
+      // Walking still works after clicking a toolbar button; only real input widgets keep their keys.
+      if (!active || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement)?.closest(OWNS_KEYS)) return;
       const k = e.key.toLowerCase();
       if (MOVE_KEYS.includes(k)) {
         e.preventDefault();
@@ -124,7 +127,9 @@ export default function Controller({
       controls.current.position = p;
     }
     motion.current.moving = moved;
-    motion.current.idle = moved ? 0 : motion.current.idle + dt;
+    // Idle time is wall-clock time (movement uses the capped dt), so slow devices still reach the idle pose.
+    motion.current.idle = moved ? 0 : motion.current.idle + Math.min(rawDt, 0.5);
+    if (motion.current.idle > 1.2) yaw.current = turnToward(yaw.current, FACE_VISITOR, reducedMotion ? 1 : dt * 3);
     root.current.position.set(p.x, 0.02, p.z);
     if (heading.current) heading.current.rotation.y = yaw.current;
     if (marker.current) marker.current.position.y = AVATAR.markerHeight + (reducedMotion ? 0 : Math.sin(clock.elapsedTime * 2.4) * 0.06);
