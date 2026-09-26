@@ -404,8 +404,8 @@ export const contact: ContactChannel[] = [
   {
     kind: 'linkedin',
     label: 'LinkedIn',
-    value: 'in/omar-khaled-a04655111',
-    href: 'https://www.linkedin.com/in/omar-khaled-a04655111/',
+    value: 'in/omar-khaled-ibraheem',
+    href: 'https://www.linkedin.com/in/omar-khaled-ibraheem/',
     sources: ['id.linkedin'],
   },
   {

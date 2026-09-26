@@ -5,7 +5,6 @@ import {
   identity,
   languages,
   moreProjects,
-  nextChapter,
   projects,
   roles,
   skills,
@@ -250,11 +249,6 @@ export function EducationSection() {
 export function ContactSection() {
   return (
     <>
-      <div className="next-callout">
-        <p className="eyebrow">{nextChapter.label}</p>
-        <h4>{nextChapter.title}</h4>
-        <p>{nextChapter.body}</p>
-      </div>
       <ul className="contact-list">
         {contact.map((c) => (
           <li key={c.kind}>

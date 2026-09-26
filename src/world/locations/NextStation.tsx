@@ -47,13 +47,13 @@ export default function NextStation({ animate }: { animate: boolean }) {
             <lineSegments geometry={edges} material={line} rotation={[0.4, 0, 0.3]} />
           </Spin>
         </Bob>
-        <Panel id="next-tag" paint={tag('NEXT BUILD', ink.amber)} size={[0.46, 0.12]} px={[240, 62]} position={[0, 0.2, 0.31]} />
+        <Panel id="next-tag" paint={tag('CONTACT', ink.amber)} size={[0.46, 0.12]} px={[240, 62]} position={[0, 0.2, 0.31]} />
       </group>
       {/* Signpost pointing forward */}
       <group position={[-0.8, 0.14, 0.6]} rotation={[0, FACE_CAMERA, 0]}>
         <Box position={[0, 0.6, 0]} size={[0.06, 1.2, 0.06]} m="graphite" />
         <group position={[0.25, 1.02, 0.04]}>
-          <Panel id="next-sign" paint={plaque("WHAT'S NEXT →", "LET'S TALK")} size={[1.0, 0.36]} px={[480, 172]} glow="sign" />
+          <Panel id="next-sign" paint={plaque('GET IN TOUCH →', "LET'S TALK")} size={[1.0, 0.36]} px={[480, 172]} glow="sign" />
         </group>
       </group>
       {/* Mailbox */}

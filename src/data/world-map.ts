@@ -62,9 +62,9 @@ const story: Omit<Destination, 'index'>[] = [
   },
   {
     id: 'contact',
-    label: 'Next & Contact',
+    label: 'Contact',
     short: 'Contact',
-    hint: 'What’s next',
+    hint: 'Let’s talk',
     position: [8.5, 3.0, 3.7],
     stop: [5.8, 4.4],
     color: '#c98a5a',

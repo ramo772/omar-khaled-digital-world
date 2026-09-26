@@ -20,7 +20,7 @@ const titles: Record<DestinationId, { title: string; lead: string }> = {
   projects: { title: 'The Project Workshop', lead: 'Every bench in the workshop is a project from my CV. Screens and models are illustrations, not client systems.' },
   ai: { title: 'AI Lab', lead: 'What I am exploring now. Experiments run locally in your browser.' },
   skills: { title: 'The toolbench', lead: 'Technologies from my CV, grouped by where I use them.' },
-  contact: { title: 'What’s next', lead: 'The last stop on the path — and the start of a conversation.' },
+  contact: { title: 'Contact', lead: 'The last stop on the path — and the start of a conversation.' },
 };
 
 export default function PlacePanel({

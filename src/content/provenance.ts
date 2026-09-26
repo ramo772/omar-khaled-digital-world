@@ -17,8 +17,8 @@ export const facts: SourceFact[] = [
   {
     id: 'id.linkedin',
     page: 1,
-    section: 'Header',
-    quote: 'https://www.linkedin.com/in/omar-khaled-a04655111/',
+    section: 'Header · corrected by Omar on 2026-09-26',
+    quote: 'https://www.linkedin.com/in/omar-khaled-ibraheem/',
   },
 
   // ── Technical skills (page 1) ─────────────────────────────────────────
