@@ -13,10 +13,11 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run build:pages
 npm start
 ```
 
-The development command prints its local URL. `build` produces a Cloudflare Worker-compatible application in `dist/`. `start` uses Wrangler to serve that built output locally. No environment variables, AI API key, database, or external account are required to run this foundation.
+The development command prints its local URL. `build` produces Vinext's build artifacts in `dist/`; `build:pages` also verifies and prepares the static `dist/client` output for Cloudflare Pages. `start` uses Wrangler to serve the separate Worker build locally. No environment variables, AI API key, database, or external account are required for local development.
 
 ## What is implemented
 
@@ -33,7 +34,7 @@ This project uses the official Sites scaffold: React, Vinext's Next-compatible a
 
 `app/` holds server-rendered content, metadata, and theme. `src/data/world-map.ts` owns destination labels/coordinates and neutral content. `src/ui/` owns the portfolio shell, dialogs, simulation, and touch UI. `src/world/` separates geometry, landmarks, camera, avatar, and input controller. `src/lib/movement.ts` contains framework-independent collision/routing math with behavioral tests. `src/hooks/usePreferences.ts` handles visibility and accessibility preferences.
 
-The world uses locally authored procedural geometry and materials, no copied Messenger assets, no model downloads, no texture packs, and no runtime font CDN. `public/og.png` is an original generated social illustration, not a screenshot or a claim of professional work.
+The world uses locally authored procedural geometry and materials, no copied Messenger assets, no model downloads, no texture packs, and no runtime font CDN. `public/og.jpg` is an original generated social illustration, not a screenshot or a claim of professional work.
 
 Read [the plan](docs/PORTFOLIO_PLAN.md), [content guide](docs/CONTENT_GUIDE.md), [avatar replacement contract](public/avatar/README.md), and [validation record](docs/QA.md).
 
@@ -45,11 +46,11 @@ Replace only `src/world/character/Avatar.tsx` to use a future cartoon model. Pla
 
 ## Deployment
 
-The generated app targets **Sites / Cloudflare Workers**, not the Next.js Vercel adapter. In the Sites workflow, build, push the exact source to the configured source repository, package the generated `dist` output with the Sites packaging helper, save a version, and deploy it. Keep source-write tokens out of repository files and remote URLs. `.openai/hosting.json` stores the opaque project identifier, never credentials.
+The portfolio is prepared for a fully static **GitHub → Cloudflare Pages** deployment. Use `npm run build:pages`, publish `dist/client`, and set the production branch to `main`. Do not deploy `dist/server`: it is the separate Worker output and is unnecessary for this site.
 
-For a standalone Cloudflare deployment, configure your own Worker name/account using the generated `dist/server/wrangler.json` and the current Wrangler deployment workflow; Cloudflare account configuration and quotas apply. No paid service is required by this application itself. Vercel requires a deliberate migration to standard Next.js build/runtime configuration; do not deploy the Vinext Worker artifact there unchanged.
+Production builds need `VITE_SITE_URL` for absolute canonical/Open Graph URLs and `VITE_SITE_INDEX=true` to opt into indexing. With those values unset, local and preview builds remain `noindex`. No runtime variables, secrets, Pages Functions, database, or paid service are required by the application. No third-party analytics are active.
 
-The foundation is marked `noindex` until verified public content and an explicit public release are ready. Set a trusted canonical origin and social-image URL for any changed deployment domain. No third-party analytics are active.
+Follow the exact settings, Git integration steps, custom-domain procedure, and post-deploy checks in [the Cloudflare Pages guide](docs/CLOUDFLARE_PAGES.md).
 
 ## Remaining phases
 
