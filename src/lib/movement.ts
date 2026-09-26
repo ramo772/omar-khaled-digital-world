@@ -6,6 +6,13 @@ export function normalize(x: number, z: number): Point {
   const length = Math.hypot(x, z);
   return length > 1 ? { x: x / length, z: z / length } : { x, z };
 }
+/** Rotate `current` toward `target` along the shortest arc; t ∈ [0, 1] is the fraction to cover. */
+export function turnToward(current: number, target: number, t: number): number {
+  let d = (target - current) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2;
+  if (d < -Math.PI) d += Math.PI * 2;
+  return current + d * Math.min(1, Math.max(0, t));
+}
 export function isWalkable(
   p: Point,
   obstacles: Obstacle[],

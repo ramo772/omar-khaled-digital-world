@@ -1,22 +1,27 @@
 /* oxlint-disable react/react-compiler -- The frame loop intentionally mutates shared input refs and Three.js transforms outside React rendering. React state must not update on every frame. */
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { Group } from 'three';
+import { ConeGeometry, MeshBasicMaterial, RingGeometry, type Group } from 'three';
 import Avatar from './Avatar';
-import {
-  destinations,
-  obstacles,
-  worldBounds,
-  spawn,
-  type DestinationId,
-} from '@/src/data/world-map';
-import { move, normalize, route, type Point } from '@/src/lib/movement';
+import { AVATAR, type AvatarMotion } from './avatar-contract';
+import { destinationById, obstacles, spawn, worldBounds, type DestinationId } from '@/src/data/world-map';
+import { move, normalize, route, turnToward, type Point } from '@/src/lib/movement';
+
 export interface Controls {
   touch: Point;
   target: Point | null;
   jump: DestinationId | 'home' | null;
   position: Point;
 }
+
+const SPEED = 3.3;
+const NEAR = 1.7;
+const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'];
+
+/**
+ * Owns input → movement → collision → heading. Knows nothing about how the
+ * avatar looks; it publishes AvatarMotion for whichever model is mounted.
+ */
 export default function Controller({
   active,
   reducedMotion,
@@ -30,36 +35,33 @@ export default function Controller({
   onNear: (id: DestinationId | null) => void;
   onPosition: (p: Point) => void;
 }) {
-  const root = useRef<Group>(null),
-    model = useRef<Group>(null),
-    moving = useRef(false),
-    keys = useRef(new Set<string>()),
-    path = useRef<Point[]>([]),
-    sample = useRef(0),
-    lastNear = useRef<DestinationId | null>(null);
+  const root = useRef<Group>(null);
+  const heading = useRef<Group>(null);
+  const marker = useRef<Group>(null);
+  const motion = useRef<AvatarMotion>({ moving: false, idle: 0 });
+  const keys = useRef(new Set<string>());
+  const path = useRef<Point[]>([]);
+  const sample = useRef(0);
+  const lastNear = useRef<DestinationId | null>(null);
+  const yaw = useRef(0.6);
+  const art = useMemo(
+    () => ({
+      ring: new RingGeometry(0.4, 0.47, 40),
+      ringMaterial: new MeshBasicMaterial({ color: '#df7950', transparent: true, opacity: 0.75, depthWrite: false }),
+      chevron: new ConeGeometry(0.13, 0.22, 4),
+      // Drawn on top of everything so Omar is never lost behind a building.
+      chevronMaterial: new MeshBasicMaterial({ color: '#df7950', depthTest: false, transparent: true, opacity: 0.95 }),
+    }),
+    [],
+  );
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (
-        !active ||
-        (e.target as HTMLElement)?.closest(
-          'button,a,input,textarea,select,[contenteditable]',
-        )
-      )
-        return;
-      if (
-        [
-          'w',
-          'a',
-          's',
-          'd',
-          'arrowup',
-          'arrowleft',
-          'arrowdown',
-          'arrowright',
-        ].includes(e.key.toLowerCase())
-      ) {
+      if (!active || (e.target as HTMLElement)?.closest('button,a,input,textarea,select,[contenteditable]')) return;
+      const k = e.key.toLowerCase();
+      if (MOVE_KEYS.includes(k)) {
         e.preventDefault();
-        keys.current.add(e.key.toLowerCase());
+        keys.current.add(k);
       }
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
@@ -81,13 +83,14 @@ export default function Controller({
       document.removeEventListener('visibilitychange', reset);
     };
   }, [active, controls]);
-  useFrame((_, rawDt) => {
+
+  useFrame(({ clock }, rawDt) => {
     if (!root.current) return;
+    const dt = Math.min(rawDt, 0.05);
     let p = controls.current.position;
     if (controls.current.jump) {
       const id = controls.current.jump;
-      const next =
-        id === 'home' ? spawn : destinations.find((d) => d.id === id)!.stop;
+      const next = id === 'home' ? spawn : destinationById[id].stop;
       p = { x: next[0], z: next[1] };
       controls.current.position = p;
       controls.current.jump = null;
@@ -98,68 +101,55 @@ export default function Controller({
       path.current = route(p, controls.current.target, obstacles, worldBounds);
       controls.current.target = null;
     }
-    moving.current = false;
+    let moved = false;
     if (active) {
       const k = keys.current;
-      const sx =
-        Number(k.has('d') || k.has('arrowright')) -
-        Number(k.has('a') || k.has('arrowleft')) +
-        controls.current.touch.x;
-      const sy =
-        Number(k.has('s') || k.has('arrowdown')) -
-        Number(k.has('w') || k.has('arrowup')) +
-        controls.current.touch.z;
-      let direction = normalize(
-        sx * 0.848 + sy * 0.53,
-        -sx * 0.53 + sy * 0.848,
-      );
+      const sx = Number(k.has('d') || k.has('arrowright')) - Number(k.has('a') || k.has('arrowleft')) + controls.current.touch.x;
+      const sy = Number(k.has('s') || k.has('arrowdown')) - Number(k.has('w') || k.has('arrowup')) + controls.current.touch.z;
+      // Screen-relative input rotated into the isometric camera's ground frame.
+      let direction = normalize(sx * 0.848 + sy * 0.53, -sx * 0.53 + sy * 0.848);
       if (sx || sy) path.current = [];
       else if (path.current.length) {
-        const goal = path.current[0],
-          dx = goal.x - p.x,
-          dz = goal.z - p.z;
-        if (Math.hypot(dx, dz) < 0.12) path.current.shift();
-        else
-          direction = normalize(
-            dx / Math.hypot(dx, dz),
-            dz / Math.hypot(dx, dz),
-          );
+        const goal = path.current[0];
+        const dx = goal.x - p.x;
+        const dz = goal.z - p.z;
+        const d = Math.hypot(dx, dz);
+        if (d < 0.12) path.current.shift();
+        else direction = { x: dx / d, z: dz / d };
       }
-      const dt = Math.min(rawDt, 0.04),
-        next = move(
-          p,
-          { x: direction.x * dt * 3.1, z: direction.z * dt * 3.1 },
-          obstacles,
-          worldBounds,
-        );
-      moving.current = Math.hypot(next.x - p.x, next.z - p.z) > 0.0001;
-      if (moving.current && model.current)
-        model.current.rotation.y = Math.atan2(next.x - p.x, next.z - p.z);
+      const next = move(p, { x: direction.x * dt * SPEED, z: direction.z * dt * SPEED }, obstacles, worldBounds);
+      moved = Math.hypot(next.x - p.x, next.z - p.z) > 0.0005;
+      if (moved) yaw.current = turnToward(yaw.current, Math.atan2(next.x - p.x, next.z - p.z), reducedMotion ? 1 : dt * 12);
       p = next;
       controls.current.position = p;
     }
+    motion.current.moving = moved;
+    motion.current.idle = moved ? 0 : motion.current.idle + dt;
     root.current.position.set(p.x, 0.02, p.z);
+    if (heading.current) heading.current.rotation.y = yaw.current;
+    if (marker.current) marker.current.position.y = AVATAR.markerHeight + (reducedMotion ? 0 : Math.sin(clock.elapsedTime * 2.4) * 0.06);
+
     sample.current += rawDt;
     if (sample.current > 0.18) {
       sample.current = 0;
       onPosition({ ...p });
-      const nearest =
-        destinations.find(
-          (d) => Math.hypot(p.x - d.stop[0], p.z - d.stop[1]) < 1.8,
-        )?.id ?? null;
+      const nearest = Object.values(destinationById).find((d) => Math.hypot(p.x - d.stop[0], p.z - d.stop[1]) < NEAR)?.id ?? null;
       if (nearest !== lastNear.current) {
         lastNear.current = nearest;
         onNear(nearest);
       }
     }
   });
+
   return (
     <group ref={root} position={[spawn[0], 0.02, spawn[1]]}>
-      <Avatar ref={model} moving={moving} reducedMotion={reducedMotion} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
-        <ringGeometry args={[0.46, 0.49, 32]} />
-        <meshBasicMaterial color="#cc8055" transparent opacity={0.6} />
-      </mesh>
+      <group ref={heading}>
+        <Avatar motion={motion} reducedMotion={reducedMotion} />
+      </group>
+      <mesh geometry={art.ring} material={art.ringMaterial} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} />
+      <group ref={marker} position={[0, AVATAR.markerHeight, 0]}>
+        <mesh geometry={art.chevron} material={art.chevronMaterial} rotation={[Math.PI, Math.PI / 4, 0]} renderOrder={10} />
+      </group>
     </group>
   );
 }

@@ -1,108 +1,156 @@
-export type DestinationId =
-  | 'about'
-  | 'experience'
-  | 'projects'
-  | 'ai'
-  | 'skills'
-  | 'contact';
+/**
+ * World layout: where things are, never what they say (that is src/content).
+ *
+ * The island is read like a page, left to right, along one path:
+ *   01 About (arrival) → 02 Career trail → 03 Project Workshop (centerpiece)
+ *   → 04 AI Lab → 05 What's next / Contact.   Skills is a short side branch.
+ * Camera looks from +x/+z, so +z is "front" (bottom of the screen).
+ */
+export type DestinationId = 'about' | 'experience' | 'projects' | 'ai' | 'skills' | 'contact';
+
 export interface Destination {
   id: DestinationId;
+  /** Narrative index shown in the UI; skills is a side branch. */
+  index: string;
   label: string;
-  chapter: string;
-  title: string;
-  description: string;
+  /** Short line for world labels and the dock tooltip. */
+  hint: string;
+  /** World-space anchor for the floating label. */
   position: [number, number, number];
+  /** Where the avatar stands to "arrive" at this place. */
   stop: [number, number];
   color: string;
 }
+
 export const destinations: Destination[] = [
   {
     id: 'about',
+    index: '01',
     label: 'About',
-    chapter: '01 / HELLO, WORLD',
-    title: 'Every world starts with a person.',
-    description:
-      'Omar Khaled · Software Engineer. The biography and education details are awaiting CV verification.',
-    position: [-6.6, 1.8, 3.5],
-    stop: [-5.1, 4.3],
-    color: '#9aafa0',
+    hint: 'Who I am',
+    position: [-8.1, 2.75, 3.3],
+    stop: [-6.1, 4.3],
+    color: '#7fa89f',
   },
   {
     id: 'experience',
+    index: '02',
     label: 'Experience',
-    chapter: '02 / THE JOURNEY',
-    title: 'The path that led here.',
-    description:
-      'A place for verified roles, companies, and milestones. No professional history has been populated in this foundation preview.',
-    position: [-6.5, 2.4, -2.9],
-    stop: [-5, -1.4],
-    color: '#cfac70',
+    hint: 'The career trail',
+    position: [-7.1, 2.9, -1.4],
+    stop: [-5.2, -0.6],
+    color: '#e8c46f',
   },
   {
     id: 'projects',
+    index: '03',
     label: 'Projects',
-    chapter: '03 / THE WORKSHOP',
-    title: 'Ideas become working things.',
-    description:
-      'The centerpiece of the world. These are neutral workshop artifacts, not representations of completed professional projects. Case studies will follow CV verification.',
-    position: [0, 4.3, -1],
-    stop: [0, 2.2],
+    hint: 'The workshop',
+    position: [2.6, 5.2, -3.6],
+    stop: [1.0, 0.75],
     color: '#df7950',
   },
   {
     id: 'ai',
+    index: '04',
     label: 'AI Lab',
-    chapter: '04 / CURRENTLY EXPLORING',
-    title: 'Leave a little room for discovery.',
-    description:
-      'An experimental space for learning about agents, tools, retrieval, and AI workflows. All interactive demonstrations are local simulations, not real AI calls or claims of professional expertise.',
-    position: [6, 3.5, -2.1],
-    stop: [5.1, 0.3],
-    color: '#719f9c',
-  },
-  {
-    id: 'skills',
-    label: 'Skills',
-    chapter: 'THE TOOLBENCH',
-    title: 'Tools, with a purpose.',
-    description:
-      'Verified technologies and skills will be added from the CV. Learning topics belong in the AI Lab and are kept separate from professional proficiency.',
-    position: [-0.9, 1.2, 5],
-    stop: [1, 4],
-    color: '#a4aa80',
+    hint: 'Currently exploring',
+    position: [7.4, 4.1, -2.5],
+    stop: [6.0, 0.9],
+    color: '#6fb6ae',
   },
   {
     id: 'contact',
-    label: 'Contact',
-    chapter: '05 / WHAT COMES NEXT',
-    title: 'The next idea starts with a conversation.',
-    description:
-      'A space for what comes next. Contact details and public links are intentionally absent until they can be verified from the CV.',
-    position: [6.3, 2.7, 4],
-    stop: [4.6, 4],
-    color: '#c79b7d',
+    index: '05',
+    label: 'Next & Contact',
+    hint: 'What comes next',
+    position: [7.9, 3.35, 4.3],
+    stop: [5.8, 4.3],
+    color: '#c98a5a',
+  },
+  {
+    id: 'skills',
+    index: '··',
+    label: 'Skills',
+    hint: 'The toolbench',
+    position: [-2.0, 2.35, 3.3],
+    stop: [-0.35, 3.45],
+    color: '#95ad88',
   },
 ];
-export const spawn: [number, number] = [-4.8, 4.3];
+
+export const destinationById = Object.fromEntries(destinations.map((d) => [d.id, d])) as Record<
+  DestinationId,
+  Destination
+>;
+
+export const spawn: [number, number] = [-5.2, 5.3];
+
+export const island = { halfX: 10.5, halfZ: 7, corner: 2 };
+export const worldBounds = { x: 10.1, z: 6.6 };
+
+/** Main route through the story, in order. */
 export const pathPoints: [number, number][] = [
-  [-5.1, 5.8],
-  [-5.1, 2.5],
-  [-5, -1.4],
-  [-3.8, -1.8],
-  [-3.5, 1.6],
-  [0, 2.2],
-  [3.3, 1.8],
-  [5.1, 0.3],
-  [5.2, 2.1],
-  [4.6, 4],
-  [3.8, 5.4],
+  [-4.3, 6.1],
+  [-6.1, 4.3],
+  [-6.9, 2.3],
+  [-6.4, 0.4],
+  [-5.2, -0.6],
+  [-4.1, -2.3],
+  [-3.55, -3.7],
+  [-3.25, -1.6],
+  [-2.3, 0.35],
+  [1.0, 0.75],
+  [3.7, 0.7],
+  [6.0, 0.9],
+  [6.6, 2.7],
+  [5.8, 4.3],
+  [4.1, 5.8],
 ];
-export const worldBounds = { x: 9.4, z: 6.35 };
+
+/** Short spur from the main path to the skills bench. */
+export const skillsSpur: [number, number][] = [
+  [-0.9, 0.6],
+  [-0.5, 2.1],
+  [-0.35, 3.45],
+];
+
+/** Career trail milestones sit beside the path, rising as the career progresses. */
+export const trail = {
+  from: [-8.2, 1.55] as [number, number],
+  to: [-4.75, -4.35] as [number, number],
+};
+
+export const landmarks = {
+  about: { x: -8.15, z: 3.45 },
+  workshop: { x: 1.0, z: -2.95, halfX: 3.75, halfZ: 2.2 },
+  ai: { x: 7.45, z: -2.5, radius: 2.05 },
+  skills: { x: -2.0, z: 3.45 },
+  contact: { x: 7.95, z: 4.25 },
+};
+
+/** Axis-aligned collision boxes (the avatar's 0.28 radius is added in movement.ts). */
 export const obstacles = [
-  { x: 0, z: -1.35, halfX: 2.65, halfZ: 1.65 },
-  { x: -6.6, z: 3, halfX: 1, halfZ: 0.6 },
-  { x: -6.7, z: -3.1, halfX: 1.9, halfZ: 1 },
-  { x: 6, z: -2.1, halfX: 1.55, halfZ: 1.55 },
-  { x: 6.8, z: 3.8, halfX: 1, halfZ: 0.7 },
-  { x: -0.9, z: 5, halfX: 1.4, halfZ: 0.45 },
+  // About desk + platform
+  { x: -8.15, z: 3.35, halfX: 1.05, halfZ: 0.65 },
+  // Career trail (three boxes approximating the diagonal band of plinths)
+  { x: -7.7, z: 0.9, halfX: 0.7, halfZ: 0.9 },
+  { x: -6.55, z: -1.2, halfX: 0.7, halfZ: 1.1 },
+  { x: -5.3, z: -3.35, halfX: 0.75, halfZ: 1.15 },
+  // Project workshop, extended to the back edge so nobody hides behind it
+  { x: 1.0, z: -4.1, halfX: 3.75, halfZ: 3.4 },
+  // AI Lab
+  { x: 7.45, z: -2.55, halfX: 1.85, halfZ: 1.85 },
+  // Skills bench
+  { x: -2.0, z: 3.35, halfX: 1.2, halfZ: 0.5 },
+  // Contact / next station
+  { x: 7.95, z: 4.25, halfX: 1.15, halfZ: 0.95 },
+  // Junction box and the thinking bench
+  { x: 2.75, z: 3.25, halfX: 0.36, halfZ: 0.26 },
+  { x: 1.1, z: 5.2, halfX: 0.62, halfZ: 0.45 },
+  // Trees
+  { x: -9.2, z: -1.9, halfX: 0.35, halfZ: 0.35 },
+  { x: 9.55, z: 1.55, halfX: 0.35, halfZ: 0.35 },
+  { x: -2.4, z: 6.1, halfX: 0.35, halfZ: 0.35 },
+  { x: 2.9, z: 6.0, halfX: 0.3, halfZ: 0.3 },
 ];

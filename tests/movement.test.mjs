@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalize, move, route, isWalkable } from '../src/lib/movement.ts';
+import { normalize, move, route, isWalkable, turnToward } from '../src/lib/movement.ts';
 const bounds = { x: 9.4, z: 6.35 };
 test('diagonal input has the same top speed as a single axis', () => {
   assert.ok(
@@ -41,6 +41,15 @@ test('tap route goes around an obstacle and reaches the intended destination', (
   assert.deepEqual(path.at(-1), goal);
   assert.ok(path.every((p) => isWalkable(p, obstacles, bounds)));
   assert.ok(path.some((p) => Math.abs(p.z) > 2.28));
+});
+test('turning takes the shortest arc and never overshoots', () => {
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  // From just below +π to just above -π is a tiny step, not a full spin.
+  const from = Math.PI - 0.1;
+  const to = -Math.PI + 0.1;
+  assert.ok(near(turnToward(from, to, 1) - from, 0.2));
+  assert.ok(near(turnToward(0, 1, 0.5), 0.5));
+  assert.ok(near(turnToward(0, 1, 5), 1));
 });
 test('unreachable or blocked tap targets do not create unsafe paths', () => {
   assert.deepEqual(

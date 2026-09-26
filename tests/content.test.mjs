@@ -11,6 +11,7 @@ import {
   courses,
   contact,
   languages,
+  workshopDisplays,
 } from '../src/content/portfolio.ts';
 import { explorationTopics, simulations } from '../src/content/exploration.ts';
 
@@ -24,6 +25,7 @@ const sourced = [
   ...courses,
   ...contact,
   languages,
+  ...Object.values(workshopDisplays),
 ];
 
 test('provenance fact IDs are unique', () => {
@@ -66,7 +68,10 @@ test('every external link is https and backed by a CV fact quoting that URL', ()
 test('each workshop station is bound to exactly one CV project', () => {
   const stations = projects.map((p) => p.station).filter(Boolean);
   assert.deepEqual(new Set(stations).size, stations.length);
-  assert.deepEqual([...stations].sort(), ['happy-human', 'mansour', 'real-estate', 'tobi']);
+  assert.deepEqual(
+    [...stations].sort((a, b) => a.localeCompare(b)),
+    ['happy-human', 'mansour', 'real-estate', 'tobi'],
+  );
 });
 
 test('AI exploration stays labelled as learning, never as professional experience', () => {

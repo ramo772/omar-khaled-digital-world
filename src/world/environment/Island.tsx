@@ -1,143 +1,99 @@
 import { useMemo } from 'react';
-import {
-  CatmullRomCurve3,
-  Vector3,
-  Shape,
-  BufferGeometry,
-  Float32BufferAttribute,
-} from 'three';
-import { pathPoints } from '@/src/data/world-map';
-import { Box, Cylinder, Plant } from './Primitives';
-function Ribbon() {
-  const geometry = useMemo(() => {
-    const curve = new CatmullRomCurve3(
-      pathPoints.map(([x, z]) => new Vector3(x, 0.035, z)),
-    );
-    const vertices: number[] = [];
-    const indices: number[] = [];
-    for (let i = 0; i <= 100; i++) {
-      const t = i / 100,
-        p = curve.getPoint(t),
-        d = curve.getTangent(t);
-      const n = new Vector3(-d.z, 0, d.x).multiplyScalar(0.6);
-      vertices.push(p.x + n.x, p.y, p.z + n.z, p.x - n.x, p.y, p.z - n.z);
-      if (i < 100) {
-        const a = i * 2;
-        indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
-      }
-    }
-    const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-    g.setIndex(indices);
-    g.computeVertexNormals();
-    return g;
-  }, []);
-  return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color="#c4b897" roughness={1} side={2} />
-    </mesh>
-  );
+import { Shape } from 'three';
+import { island } from '@/src/data/world-map';
+import { material } from '../materials/registry';
+import { canvasTexture } from '../materials/canvas';
+import { deckGrid, plaque } from '../materials/painters';
+import { Box, Panel, Rock, Tree } from './Primitives';
+
+function roundedRect(hx: number, hz: number, r: number) {
+  const s = new Shape();
+  s.moveTo(-hx + r, -hz);
+  s.lineTo(hx - r, -hz);
+  s.quadraticCurveTo(hx, -hz, hx, -hz + r);
+  s.lineTo(hx, hz - r);
+  s.quadraticCurveTo(hx, hz, hx - r, hz);
+  s.lineTo(-hx + r, hz);
+  s.quadraticCurveTo(-hx, hz, -hx, hz - r);
+  s.lineTo(-hx, -hz + r);
+  s.quadraticCurveTo(-hx, -hz, -hx + r, -hz);
+  return s;
 }
-export default function Island() {
-  const shape = useMemo(() => {
-    const s = new Shape();
-    const x = 10,
-      y = 7,
-      r = 2;
-    s.moveTo(-x + r, -y);
-    s.lineTo(x - r, -y);
-    s.quadraticCurveTo(x, -y, x, -y + r);
-    s.lineTo(x, y - r);
-    s.quadraticCurveTo(x, y, x - r, y);
-    s.lineTo(-x + r, y);
-    s.quadraticCurveTo(-x, y, -x, y - r);
-    s.lineTo(-x, -y + r);
-    s.quadraticCurveTo(-x, -y, -x + r, -y);
-    return s;
+
+/** Moss beds: nature as a supporting accent, never the identity. */
+const beds: [number, number, number, number][] = [
+  [-9.1, -2.4, 1.3, 1.6],
+  [9.2, 1.9, 1.1, 1.7],
+  [-2.6, 6.0, 1.7, 0.8],
+  [3.1, 5.9, 1.4, 0.8],
+  [-0.9, -6.3, 2.4, 0.6],
+  [9.3, -5.3, 1.0, 1.1],
+];
+
+export default function Island({ name }: { name: string }) {
+  const { top, base, deck } = useMemo(() => {
+    const grid = canvasTexture('deck-grid', 128, 128, deckGrid, 1);
+    // Shape UVs are world units, so one grid cell per world unit.
+    grid.repeat.set(1, 1);
+    return {
+      top: roundedRect(island.halfX, island.halfZ, island.corner),
+      base: roundedRect(island.halfX - 0.35, island.halfZ - 0.35, 1.7),
+      // Same theme tint as the "deck" token, plus the faint engineering grid.
+      deck: material('deck', grid),
+    };
   }, []);
+
   return (
     <group>
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -1.3, 0]}
-        receiveShadow
-        castShadow
-      >
+      {/* Base block */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.35, 0]} receiveShadow castShadow material={material('deckEdge')}>
         <extrudeGeometry
           args={[
-            shape,
-            {
-              depth: 1.2,
-              bevelEnabled: true,
-              bevelSize: 0.2,
-              bevelThickness: 0.1,
-              bevelSegments: 2,
-              steps: 1,
-            },
+            top,
+            { depth: 1.25, bevelEnabled: true, bevelSize: 0.16, bevelThickness: 0.08, bevelSegments: 2, steps: 1 },
           ]}
         />
-        <meshStandardMaterial color="#d8d4bf" roughness={1} />
       </mesh>
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.012, 0]}
-        receiveShadow
-      >
-        <shapeGeometry args={[shape]} />
-        <meshStandardMaterial color="#c3cbb0" roughness={1} />
+      {/* Dark plinth under the base, like a model on a workbench */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.72, 0]} material={material('plinth')}>
+        <extrudeGeometry args={[base, { depth: 0.4, bevelEnabled: false }]} />
       </mesh>
-      <Ribbon />
-      <Box
-        position={[0, -0.83, 6.99]}
-        size={[4.6, 0.12, 0.07]}
-        color="#718d87"
+      {/* Deck surface with grid */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow material={deck}>
+        <shapeGeometry args={[top]} />
+      </mesh>
+      {/* Copper trace band around the deck edge (glows at night) */}
+      <Box position={[0, -0.5, island.halfZ + 0.17]} size={[island.halfX * 2 - 4, 0.05, 0.02]} m="trace" shadow={false} />
+      <Box position={[island.halfX + 0.17, -0.5, 0]} size={[0.02, 0.05, island.halfZ * 2 - 4]} m="trace" shadow={false} />
+      {/* Nameplate on the front face */}
+      <Panel
+        id={`world-plaque:${name}`}
+        paint={plaque(`${name.toUpperCase()}’S SMALL DIGITAL ENGINEERING WORLD`, undefined, '#df7950')}
+        size={[6.4, 0.44]}
+        px={[1280, 88]}
+        position={[-2.2, -0.62, island.halfZ + 0.18]}
+        glow="sign"
       />
-      <Box
-        position={[3.3, -0.83, 6.93]}
-        size={[0.9, 0.12, 0.07]}
-        color="#d67f53"
-      />
-      {[-7.8, -6.8, -5.8].map((x) => (
-        <Box
-          key={x}
-          position={[x, -0.63, 6.6]}
-          size={[0.55, 0.55, 0.1]}
-          color="#96a49a"
-        />
+      {beds.map(([x, z, w, d], i) => (
+        <Box key={i} position={[x, 0.03, z]} size={[w, 0.06, d]} m="moss" shadow={false} />
       ))}
-      <Plant position={[-8, 0, -0.3]} scale={1.3} />
-      <Plant position={[-8.3, 0, 4.8]} scale={0.85} />
-      <Plant position={[8.4, 0, -4.5]} scale={1.1} />
-      <Plant position={[2.5, 0, -4.8]} scale={1.15} />
-      <Plant position={[8.6, 0, 1]} scale={0.7} />
-      {[
-        [1.8, -5.5],
-        [-3, -5.8],
-        [8.5, 5.3],
-        [-8.8, -4.6],
-        [-2.9, 5.4],
-      ].map(([x, z], i) => (
-        <group key={i}>
-          <Cylinder
-            position={[x, 0.05, z]}
-            radius={0.35}
-            height={0.1}
-            color="#d8d9b9"
-          />
-          <mesh position={[x, 0.22, z]} scale={[0.38, 0.24, 0.3]}>
-            <dodecahedronGeometry />
-            <meshStandardMaterial color="#e6dfcc" flatShading />
-          </mesh>
-        </group>
+      <Tree position={[-9.2, 0, -1.9]} scale={1.15} />
+      <Tree position={[9.55, 0, 1.55]} scale={0.9} />
+      <Tree position={[-2.4, 0, 6.1]} scale={0.8} />
+      <Tree position={[2.9, 0, 6.0]} scale={0.7} />
+      <Tree position={[-0.2, 0, -6.35]} scale={1.05} />
+      <Tree position={[9.3, 0, -5.4]} scale={0.95} />
+      {(
+        [
+          [-9.6, 5.2, 0.34],
+          [4.6, -6.3, 0.3],
+          [9.7, 4.9, 0.26],
+          [-6.0, -5.9, 0.36],
+          [0.6, 6.4, 0.24],
+        ] as const
+      ).map(([x, z, s], i) => (
+        <Rock key={i} position={[x, s * 0.45, z]} scale={[s * 1.3, s * 0.8, s]} />
       ))}
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -1.75, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[200, 200]} />
-        <shadowMaterial opacity={0.11} />
-      </mesh>
     </group>
   );
 }

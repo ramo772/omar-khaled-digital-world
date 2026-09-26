@@ -20,7 +20,12 @@ export const identity: Identity = {
   headline: 'Software Engineer',
   currentRole: 'Senior Software Engineer',
   currentOrganization: 'VOIS (Vodafone Intelligent Solutions)',
+  shortOrganization: 'VOIS',
+  currentProject: 'TOBi',
+  currentProjectNote: 'Vodafone’s digital assistant',
+  pitch: 'Node.js, React, Next.js, PHP/Laravel and MySQL across web and mobile.',
   focus: 'Backend / Full-Stack',
+  exploring: 'AI engineering',
   summary:
     'I work on TOBi, Vodafone’s digital assistant, at VOIS — building new features such as Ask Once, integrating with other Vodafone services, and resolving production issues. Before that I built web and mobile products across the front-end and back-end with Node.js, React, Next.js, PHP/Laravel and MySQL.',
   origin:
@@ -45,6 +50,7 @@ export const identity: Identity = {
 export const roles: Role[] = [
   {
     id: 'emc',
+    short: 'EMC',
     title: 'Workshop Engineer',
     organization: 'Egyptian Maintenance Center (EMC)',
     start: 'Dec 2019',
@@ -57,6 +63,7 @@ export const roles: Role[] = [
   },
   {
     id: 'xerox',
+    short: 'Xerox',
     title: 'Field Engineer',
     organization: 'Xerox',
     start: 'Jul 2020',
@@ -68,6 +75,7 @@ export const roles: Role[] = [
   },
   {
     id: 'fullstack',
+    short: 'Full-stack',
     title: 'Software Engineer · Full-Stack Developer',
     start: 'Jun 2021',
     end: 'Jul 2022',
@@ -79,6 +87,7 @@ export const roles: Role[] = [
   },
   {
     id: 'saba',
+    short: 'Saba-IP',
     title: 'Patent Engineer',
     organization: 'Saba-IP',
     start: 'Nov 2021',
@@ -91,6 +100,7 @@ export const roles: Role[] = [
   },
   {
     id: 'amit',
+    short: 'Amit',
     title: 'Full-Stack Instructor',
     organization: 'Amit-Learning',
     start: 'Aug 2022',
@@ -103,6 +113,7 @@ export const roles: Role[] = [
   },
   {
     id: 'beyond',
+    short: 'Beyond',
     title: 'Software Engineer',
     organization: 'Beyond Creation',
     start: 'Apr 2023',
@@ -115,6 +126,7 @@ export const roles: Role[] = [
   },
   {
     id: 'vois',
+    short: 'VOIS',
     title: 'Senior Software Engineer',
     organization: 'VOIS (Vodafone Intelligent Solutions)',
     start: 'Apr 2025',
@@ -259,6 +271,32 @@ export const projects: Project[] = [
   },
 ];
 
+/**
+ * Words painted onto the workshop's screens and boards. Kept here (not in the
+ * 3D code) so every visible label stays traceable to the CV.
+ */
+export const workshopDisplays = {
+  tobi: {
+    title: 'TOBi · Vodafone UK — where my part sits',
+    nodes: [
+      { label: 'React.js UI', sub: 'TOBi components' },
+      { label: 'Node.js services', sub: 'messages → FE' },
+      { label: 'Vodafone services', sub: 'integrations' },
+    ],
+    badge: 'ASK ONCE',
+    footnote: 'Simplified from my CV · not an official architecture diagram',
+    sources: ['proj.tobi.fe', 'proj.tobi.be'],
+  },
+  realEstate: { screen: 'Next.js · CRUD', toggle: 'LANG', api: 'LARAVEL API', sources: ['proj.realestate.fe', 'proj.realestate.be'] },
+  mansour: {
+    screen: 'Laravel · background jobs',
+    jobs: ['service-reminders', 'vehicle-status', 'notifications'],
+    sync: 'SAP SYNC',
+    sources: ['proj.mansour.be'],
+  },
+  happyHuman: { screen: 'HR assistant', badges: ['MEMORY', 'STREAMING'], chain: 'LANGCHAIN', sources: ['proj.happyhuman.be'] },
+};
+
 export const moreProjects: CompactProject[] = [
   {
     id: 'hyundai',
@@ -337,6 +375,7 @@ export const skills: SkillGroup[] = [
 export const education: Education = {
   institution: 'Institute of Aviation Engineering and Technology',
   degree: 'Bachelor of Aeronautical Engineering',
+  short: 'Aero Eng.',
   date: 'May 2017',
   note: 'Graduation project: Micro-Jet Engine KJ66',
   sources: ['edu.degree'],

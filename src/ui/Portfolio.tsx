@@ -1,415 +1,232 @@
 'use client';
-/* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- This named world section is an intentional keyboard movement surface, with an adjacent semantic text alternative. */
-import {
-  lazy,
-  Suspense,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from 'react';
-import {
-  ArrowUpRight,
-  ArrowRight,
-  Code2,
-  Sparkles,
-  Grid2X2,
-  Home,
-  BriefcaseBusiness,
-  Wrench,
-  Radio,
-  FlaskConical,
-  Plus,
-  Minus,
-  RotateCcw,
-  Leaf,
-  VolumeX,
-} from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { destinations, spawn, type DestinationId } from '@/src/data/world-map';
+/* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- The named world region is an intentional keyboard movement surface, with a full semantic text alternative. */
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Grid2X2 } from 'lucide-react';
+import { identity } from '@/src/content/portfolio';
+import { destinationById, spawn, type DestinationId } from '@/src/data/world-map';
 import type { Controls } from '@/src/world/character/Controller';
 import { usePreferences } from '@/src/hooks/usePreferences';
+import { useTheme } from '@/src/theme/ThemeProvider';
+import { detectWebGL } from '@/src/lib/webgl';
+import type { ProfileSectionId } from './profile/Profile';
 import WorldBoundary from './WorldBoundary';
+import WorldFallback from './WorldFallback';
 import TouchControls from './TouchControls';
-import AgentSimulation from './AgentSimulation';
+import ThemeToggle from './ThemeToggle';
+import Intro from './Intro';
+import Dock from './Dock';
+import WorkShelf from './WorkShelf';
+import WorldSettings from './WorldSettings';
+import QuickView from './panels/QuickView';
+import PlacePanel from './panels/PlacePanel';
+
 const World = lazy(() => import('@/src/world/World'));
-const icons = {
-  about: Home,
-  experience: BriefcaseBusiness,
-  projects: Code2,
-  ai: FlaskConical,
-  skills: Wrench,
-  contact: Radio,
-};
+
+type Panel = { kind: 'place'; id: DestinationId; project?: string } | { kind: 'quick'; section?: ProfileSectionId } | null;
+type WorldStatus = 'pending' | 'ok' | 'forced' | 'unsupported' | 'failed';
+
 export default function Portfolio() {
-  const [ready, setReady] = useState(false),
-    [available, setAvailable] = useState(true),
-    [entered, setEntered] = useState(false);
-  const [panel, setPanel] = useState<DestinationId | 'quick' | null>(null),
-    [near, setNear] = useState<DestinationId | null>(null),
-    [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: spawn[0], z: spawn[1] }),
-    [textOnly, setTextOnly] = useState(false);
-  const { reducedMotion, lowQuality, setLowQuality, visible } =
-    usePreferences();
-  const controls = useRef<Controls>({
-    touch: { x: 0, z: 0 },
-    target: null,
-    jump: null,
-    position: { x: spawn[0], z: spawn[1] },
-  });
-  const stage = useRef<HTMLElement>(null),
-    lastFocus = useRef<HTMLElement | null>(null);
+  const [status, setStatus] = useState<WorldStatus>('pending');
+  const [entered, setEntered] = useState(false);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [near, setNear] = useState<DestinationId | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [follow, setFollow] = useState(true);
+  const [textOnly, setTextOnly] = useState(false);
+  const { reducedMotion, lowQuality, setLowQuality, visible } = usePreferences();
+  const { resolved } = useTheme();
+  const controls = useRef<Controls>({ touch: { x: 0, z: 0 }, target: null, jump: null, position: { x: spawn[0], z: spawn[1] } });
+  const stage = useRef<HTMLElement>(null);
+  const lastFocus = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
-    // oxlint-disable-next-line react/react-compiler -- Detect browser capabilities after hydration, keeping the server and initial client markup identical.
-    setReady(true);
-    setAvailable(typeof WebGL2RenderingContext !== 'undefined');
+    // Capability detection after hydration keeps server and first client render identical.
+    const webgl = detectWebGL();
+    // oxlint-disable-next-line react/react-compiler -- one-time browser capability probe after hydration.
+    setStatus(webgl.ok ? 'ok' : (webgl.reason ?? 'unsupported'));
   }, []);
-  const show = useCallback((id: DestinationId | 'quick') => {
+
+  const worldOn = status === 'ok' && !textOnly;
+  const active = worldOn && entered && !panel && visible;
+
+  const openPlace = useCallback((id: DestinationId, project?: string) => {
     lastFocus.current = document.activeElement as HTMLElement;
-    if (id !== 'quick') controls.current.jump = id;
-    setPanel(id);
+    controls.current.jump = id;
+    setPanel({ kind: 'place', id, project });
+  }, []);
+  const openProject = useCallback((id: string) => openPlace('projects', id), [openPlace]);
+  const openQuick = useCallback((section?: ProfileSectionId) => {
+    lastFocus.current = document.activeElement as HTMLElement;
+    setPanel({ kind: 'quick', section });
   }, []);
   const close = () => {
     setPanel(null);
-    requestAnimationFrame(() =>
-      lastFocus.current?.focus({ preventScroll: true }),
-    );
+    requestAnimationFrame(() => lastFocus.current?.focus({ preventScroll: true }));
   };
-  const fail = useCallback(() => {
-    setAvailable(false);
+  const focusWorld = () => requestAnimationFrame(() => stage.current?.focus({ preventScroll: true }));
+  const enter = () => {
+    setEntered(true);
+    setFollow(true);
+    focusWorld();
+  };
+  const onWorldError = useCallback(() => setStatus('failed'), []);
+  // Exposed for tests/debugging without re-rendering React on every step.
+  const onPosition = useCallback((p: { x: number; z: number }) => {
+    if (stage.current) stage.current.dataset.position = `${p.x.toFixed(2)},${p.z.toFixed(2)}`;
   }, []);
   const slow = useCallback(() => setLowQuality(true), [setLowQuality]);
-  const place = destinations.find((p) => p.id === panel),
-    nearby = destinations.find((p) => p.id === near);
-  const active = entered && !panel && visible && !textOnly;
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (
-        !active ||
-        !near ||
-        (e.target as HTMLElement)?.closest('button,a,input,textarea,select')
-      )
-        return;
+      if (!active || !near || (e.target as HTMLElement)?.closest('button,a,input,textarea,select')) return;
       if (e.key.toLowerCase() === 'e' || e.key === 'Enter') {
         e.preventDefault();
-        show(near);
+        openPlace(near);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [active, near, show]);
-  const enter = () => {
-    setEntered(true);
-    requestAnimationFrame(() => stage.current?.focus({ preventScroll: true }));
-  };
+  }, [active, near, openPlace]);
+
+  const fallbackReason = textOnly ? 'text' : status === 'ok' || status === 'pending' ? null : status;
+  const nearby = near ? destinationById[near] : null;
+
   return (
-    <main className={`portfolio ${entered ? 'is-entered' : ''}`}>
+    <div className={`stage ${entered && worldOn ? 'is-entered' : ''} ${worldOn ? 'has-world' : 'no-world'}`}>
       <a className="skip-link" href="#readable-portfolio">
-        Skip to readable portfolio
+        Skip to the readable portfolio
       </a>
       <header className="site-header">
-        <Link className="wordmark" href="/" aria-label="Omar Khaled home">
-          <span className="monogram">
+        <a className="wordmark" href="#top" aria-label={`${identity.name} — home`}>
+          <span className="monogram" aria-hidden="true">
             ok<span>.</span>
           </span>
-          <span>
-            OMAR KHALED<small>SOFTWARE ENGINEER</small>
+          <span className="wordmark-text">
+            {identity.name}
+            <small>{identity.headline}</small>
           </span>
-        </Link>
+        </a>
         <div className="header-actions">
-          <span className="phase-tag">
-            <i /> WORLD IN PROGRESS · 01
-          </span>
-          <Button
-            variant="outline"
-            className="quick-button"
-            onClick={() => show('quick')}
-          >
-            <Grid2X2 /> Quick view <ArrowUpRight />
-          </Button>
+          <ThemeToggle />
+          <button type="button" className="quick-button" onClick={() => openQuick()}>
+            <Grid2X2 aria-hidden="true" size={16} />
+            <span>Quick View</span>
+          </button>
         </div>
       </header>
+
+      <Intro
+        entered={entered && worldOn}
+        canExplore={worldOn}
+        onEnter={enter}
+        onQuickView={() => openQuick()}
+        onProject={openProject}
+      />
+      {!(entered && worldOn) && <WorkShelf className="shelf-floating" onOpen={openProject} />}
+
       <section
         ref={stage}
+        id="top"
         className="world-canvas"
-        tabIndex={entered ? 0 : -1}
-        aria-label="Interactive engineering world. Move with WASD or arrow keys. Click ground to walk. Press E near a landmark."
-        data-position={`${position.x.toFixed(2)},${position.z.toFixed(2)}`}
+        tabIndex={active ? 0 : -1}
+        aria-label="Interactive 3D world. Move with W A S D or the arrow keys, click the ground to walk, press E near a place to open it. Everything here is also in Quick View."
       >
-        {ready && available && !textOnly ? (
-          <WorldBoundary onFallback={() => show('quick')}>
+        {worldOn ? (
+          <WorldBoundary onError={onWorldError}>
             <Suspense
               fallback={
-                <div className="world-loading">
-                  <span />
-                  Assembling a little world…
+                <div className="world-loading" aria-live="polite">
+                  <span aria-hidden="true" /> Assembling the workshop…
                 </div>
               }
             >
               <World
-                onSelect={show}
+                onSelect={openPlace}
+                onProject={openProject}
                 active={active}
                 paused={!visible || !!panel}
+                follow={entered && follow}
+                labels={!panel}
+                theme={resolved}
                 reducedMotion={reducedMotion}
                 lowQuality={lowQuality}
                 zoom={zoom}
                 controls={controls}
                 onNear={setNear}
-                onPosition={setPosition}
+                onPosition={onPosition}
                 onSlow={slow}
-                onLost={fail}
+                onLost={onWorldError}
               />
             </Suspense>
           </WorldBoundary>
         ) : (
-          ready && (
-            <div className="fallback-message">
-              <p>
-                {textOnly
-                  ? 'A quieter way to explore.'
-                  : 'Your portfolio doesn’t need WebGL.'}
-              </p>
-              <Button onClick={() => show('quick')}>
-                Open Quick View <ArrowRight />
-              </Button>
-              <a href="#readable-portfolio">Read the text version</a>
-            </div>
+          fallbackReason && (
+            <WorldFallback
+              reason={fallbackReason}
+              onQuickView={() => openQuick()}
+              onRetry={textOnly ? () => setTextOnly(false) : undefined}
+            />
           )
         )}
       </section>
-      <section className="intro-copy">
-        <p className="eyebrow">
-          <span className="tiny-line" /> A SMALL DIGITAL WORLD
-        </p>
-        <h1>
-          {entered ? (
-            <>
-              Make yourself
-              <br />
-              <em>at home.</em>
-            </>
-          ) : (
-            <>
-              Serious about building.
-              <br />
-              <em>
-                Curious about
-                <br />
-                everything.
-              </em>
-            </>
-          )}
-        </h1>
-        <p className="intro-description">
-          I’m Omar, a software engineer.
-          <br />
-          Welcome to my little corner of the internet.
-        </p>
-        {!entered ? (
-          <Button className="enter-button" onClick={enter}>
-            Enter my world <ArrowRight />
-          </Button>
-        ) : (
-          <div className="walk-hint">
-            <p>
-              <kbd>W</kbd>
-              <kbd>A</kbd>
-              <kbd>S</kbd>
-              <kbd>D</kbd>
-              <span> or arrow keys to walk</span>
-            </p>
-            <p>Click a path. Discover a place.</p>
-            <Button
-              variant="outline"
-              className="near-button"
-              disabled={!nearby}
-              onClick={() => near && show(near)}
-            >
-              <kbd>E</kbd>
-              {nearby ? `Explore ${nearby.label}` : 'Follow your curiosity'}
-            </Button>
-          </div>
-        )}
-        <p className="intro-note">A portfolio to explore, at your own pace.</p>
-      </section>
-      <div className="world-caption">
-        <span className="live-dot" />{' '}
-        {entered
-          ? `POSITION ${position.x.toFixed(1)} / ${position.z.toFixed(1)}`
-          : 'BUILT WITH CURIOSITY'}{' '}
-        <span className="caption-rule" />{' '}
-        {reducedMotion ? 'REDUCED MOTION' : 'EXPLORE FREELY'}
-      </div>
-      <aside className="lab-note">
-        <Sparkles size={16} />
-        <div>
-          <span>CURRENTLY EXPLORING</span>
-          <p>A little space for AI experiments.</p>
+
+      {active && nearby && (
+        <div className="near-prompt" aria-live="polite">
+          <button type="button" onClick={() => openPlace(nearby.id)}>
+            Open {nearby.label}
+          </button>
+          <span className="near-key">
+            or press <kbd>E</kbd>
+          </span>
         </div>
-      </aside>
-      <div className="world-settings" aria-label="World settings">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Zoom in"
-          disabled={zoom >= 1.2}
-          onClick={() => setZoom((z) => Math.min(1.2, z + 0.1))}
-        >
-          <Plus />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Zoom out"
-          disabled={zoom <= 0.8}
-          onClick={() => setZoom((z) => Math.max(0.8, z - 0.1))}
-        >
-          <Minus />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Reset view and position"
-          onClick={() => {
-            setZoom(1);
-            controls.current.jump = 'home';
-            stage.current?.focus({ preventScroll: true });
-          }}
-        >
-          <RotateCcw />
-        </Button>
-        <span />
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={
-            lowQuality ? 'Enable full graphics' : 'Enable low graphics'
-          }
-          aria-pressed={lowQuality}
-          onClick={() => setLowQuality(!lowQuality)}
-        >
-          <Leaf />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={
-            textOnly ? 'Return to 3D world' : 'Switch to text-only mode'
-          }
-          aria-pressed={textOnly}
-          onClick={() => {
-            setTextOnly(!textOnly);
-            if (!textOnly) show('quick');
-          }}
-        >
-          <Grid2X2 />
-        </Button>
-        <span
-          className="sound-off"
-          title="Audio is off. Optional ambience is planned for a later phase."
-        >
-          <VolumeX size={15} />
-          <span className="sr-only">Audio off</span>
-        </span>
-      </div>
-      {entered && available && !textOnly && (
-        <TouchControls controls={controls} />
       )}
-      <nav className="destination-dock" aria-label="Quick portfolio navigation">
-        {destinations.map((p) => {
-          const Icon = icons[p.id];
-          return (
-            <Button
-              key={p.id}
-              variant="ghost"
-              className={`dock-item ${p.id === 'projects' ? 'featured' : ''}`}
-              onClick={() => show(p.id)}
-            >
-              <Icon size={18} />
-              <span>{p.label}</span>
-            </Button>
-          );
-        })}
-      </nav>
-      <footer className="world-footer">
-        <span>© 2026 OMAR KHALED</span>
-        <span>PHASE 1 · ORIGINAL WORLD FOUNDATION</span>
-        <span>TAKE THE SCENIC ROUTE ↗</span>
-      </footer>
-      <Dialog
-        open={!!panel}
-        onOpenChange={(open) => {
-          if (!open) close();
+
+      {status !== 'pending' && (
+        <WorldSettings
+          zoom={zoom}
+          follow={follow}
+          lowQuality={lowQuality}
+          textOnly={textOnly || !worldOn}
+          entered={entered && worldOn}
+          onZoom={setZoom}
+          onFollow={setFollow}
+          onReset={() => {
+            setZoom(1);
+            setFollow(entered);
+            controls.current.jump = 'home';
+            if (entered) focusWorld();
+          }}
+          onQuality={setLowQuality}
+          onTextOnly={(t) => {
+            setTextOnly(t);
+            if (!t) setStatus(detectWebGL().ok ? 'ok' : 'unsupported');
+          }}
+        />
+      )}
+
+      {active && <TouchControls controls={controls} />}
+
+      <Dock current={active ? near : null} onSelect={(id) => openPlace(id)} />
+
+      <QuickView open={panel?.kind === 'quick'} section={panel?.kind === 'quick' ? panel.section : undefined} onClose={close} />
+      <PlacePanel
+        place={panel?.kind === 'place' ? panel.id : null}
+        project={panel?.kind === 'place' ? panel.project : undefined}
+        reducedMotion={reducedMotion}
+        onClose={close}
+        onContinue={() => {
+          setPanel(null);
+          if (worldOn) {
+            setEntered(true);
+            focusWorld();
+          }
         }}
-      >
-        <DialogContent
-          className={`portfolio-dialog ${panel === 'quick' ? 'quick-dialog' : ''}`}
-        >
-          {panel === 'quick' ? (
-            <>
-              <p className="eyebrow">NO WALKING REQUIRED</p>
-              <DialogTitle>Omar Khaled</DialogTitle>
-              <DialogDescription>
-                Software Engineer · A small digital world for building and
-                curiosity.
-              </DialogDescription>
-              <p className="content-notice">
-                Foundation preview. Professional details await CV verification.
-              </p>
-              <nav className="quick-sections" aria-label="Quick View sections">
-                {destinations.map((p) => (
-                  <a key={p.id} href={`#quick-${p.id}`}>
-                    {p.label}
-                  </a>
-                ))}
-              </nav>
-              <div className="quick-content">
-                {destinations.map((p) => (
-                  <section key={p.id} id={`quick-${p.id}`}>
-                    <p className="eyebrow">{p.chapter}</p>
-                    <h3>{p.label}</h3>
-                    <p>{p.description}</p>
-                  </section>
-                ))}
-              </div>
-            </>
-          ) : (
-            place && (
-              <>
-                <p className="eyebrow">{place.chapter}</p>
-                <DialogTitle>{place.title}</DialogTitle>
-                <DialogDescription>{place.description}</DialogDescription>
-                {place.id === 'ai' && <AgentSimulation />}
-                <p className="content-notice">
-                  {place.id === 'ai'
-                    ? 'Currently exploring · Learning, not employment experience'
-                    : 'Foundation preview · Awaiting verified CV content'}
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    close();
-                    setEntered(true);
-                    requestAnimationFrame(() =>
-                      stage.current?.focus({ preventScroll: true }),
-                    );
-                  }}
-                >
-                  Continue exploring <ArrowRight />
-                </Button>
-              </>
-            )
-          )}
-        </DialogContent>
-      </Dialog>
-    </main>
+        onQuickView={() => setPanel({ kind: 'quick', section: panel?.kind === 'place' ? sectionFor(panel.id) : undefined })}
+      />
+    </div>
   );
+}
+
+function sectionFor(id: DestinationId): ProfileSectionId {
+  return id === 'contact' ? 'contact' : id;
 }

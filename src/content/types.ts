@@ -24,7 +24,14 @@ export interface Identity extends Sourced {
   headline: string;
   currentRole: string;
   currentOrganization: string;
+  shortOrganization: string;
+  currentProject: string;
+  currentProjectNote: string;
+  /** One-sentence stack summary for the hero. */
+  pitch: string;
   focus: string;
+  /** From Omar's brief, not the CV — always presented as exploration. */
+  exploring: string;
   summary: string;
   origin: string;
   location: string;
@@ -35,6 +42,8 @@ export interface Role extends Sourced {
   title: string;
   /** Omitted when the CV does not name the organisation. */
   organization?: string;
+  /** Two-word label for the career-trail flag. */
+  short: string;
   start: string;
   end: string;
   /** ISO month used only for ordering. */
@@ -87,6 +96,7 @@ export interface SkillGroup extends Sourced {
 export interface Education extends Sourced {
   institution: string;
   degree: string;
+  short: string;
   date: string;
   note: string;
 }

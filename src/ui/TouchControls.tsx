@@ -1,13 +1,17 @@
 /* oxlint-disable react/react-compiler -- Touch events update the shared movement ref consumed by the imperative Three.js frame loop. */
-import type { RefObject, PointerEvent } from 'react';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { PointerEvent, RefObject } from 'react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 import type { Controls } from '@/src/world/character/Controller';
-export default function TouchControls({
-  controls,
-}: {
-  controls: RefObject<Controls>;
-}) {
+
+const pads = [
+  { x: 0, z: -1, label: 'Move up', Icon: ArrowUp, area: 'up' },
+  { x: -1, z: 0, label: 'Move left', Icon: ArrowLeft, area: 'left' },
+  { x: 0, z: 1, label: 'Move down', Icon: ArrowDown, area: 'down' },
+  { x: 1, z: 0, label: 'Move right', Icon: ArrowRight, area: 'right' },
+] as const;
+
+/** On-screen D-pad for touch devices. Tapping the ground also walks there. */
+export default function TouchControls({ controls }: { controls: RefObject<Controls> }) {
   const reset = () => {
     controls.current.touch = { x: 0, z: 0 };
   };
@@ -17,29 +21,23 @@ export default function TouchControls({
     controls.current.touch = { x, z };
   };
   return (
-    <div className="touch-controls" aria-label="Movement controls">
-      {[
-        [0, -1, 'Move forward', ArrowUp],
-        [-1, 0, 'Move left', ArrowLeft],
-        [0, 1, 'Move backward', ArrowDown],
-        [1, 0, 'Move right', ArrowRight],
-      ].map(([x, z, label, Icon], i) => {
-        const Glyph = Icon as typeof ArrowUp;
-        return (
-          <Button
-            key={i}
-            variant="outline"
-            aria-label={label as string}
-            className={`direction direction-${i}`}
-            onPointerDown={(e) => start(e, x as number, z as number)}
-            onPointerUp={reset}
-            onPointerCancel={reset}
-            onLostPointerCapture={reset}
-          >
-            <Glyph />
-          </Button>
-        );
-      })}
-    </div>
+    <fieldset className="touch-controls">
+      <legend className="sr-only">Movement controls</legend>
+      {pads.map(({ x, z, label, Icon, area }) => (
+        <button
+          key={area}
+          type="button"
+          aria-label={label}
+          className={`pad pad-${area}`}
+          onPointerDown={(e) => start(e, x, z)}
+          onPointerUp={reset}
+          onPointerCancel={reset}
+          onLostPointerCapture={reset}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <Icon aria-hidden="true" size={18} />
+        </button>
+      ))}
+    </fieldset>
   );
 }

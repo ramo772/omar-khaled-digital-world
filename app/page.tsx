@@ -1,35 +1,31 @@
 import Portfolio from '@/src/ui/Portfolio';
-import { destinations } from '@/src/data/world-map';
+import Profile from '@/src/ui/profile/Profile';
+import { identity } from '@/src/content/portfolio';
+
 export default function Page() {
   return (
     <>
       <Portfolio />
-      <section
-        id="readable-portfolio"
-        className="semantic-portfolio"
-        aria-label="Portfolio text view"
-      >
-        <p className="eyebrow">THE READABLE VERSION</p>
-        <h2>
-          Omar Khaled <span>Software Engineer</span>
-        </h2>
+      {/* Server-rendered: the whole portfolio without JavaScript or WebGL. */}
+      <main id="readable-portfolio" className="readable" tabIndex={-1}>
+        <header className="readable-header">
+          <p className="eyebrow">The readable version</p>
+          <h2>Omar’s portfolio, in plain text</h2>
+          <p>
+            {identity.currentRole} at {identity.currentOrganization} · {identity.focus} · {identity.location}
+          </p>
+        </header>
+        <Profile idPrefix="section" />
+      </main>
+      <footer className="site-footer">
+        <p>© 2026 {identity.name}</p>
+        <p>Original procedural 3D · no trackers · content sourced from my CV</p>
         <p>
-          A small digital world for engineering, building, and exploring AI.
+          <a className="text-link" href="#top">
+            Back to the world ↑
+          </a>
         </p>
-        <p className="content-notice">
-          Foundation preview. Professional content will be added only after the
-          CV has been verified.
-        </p>
-        <div className="semantic-grid">
-          {destinations.map((place) => (
-            <section key={place.id} id={`section-${place.id}`}>
-              <p className="eyebrow">{place.chapter}</p>
-              <h3>{place.label}</h3>
-              <p>{place.description}</p>
-            </section>
-          ))}
-        </div>
-      </section>
+      </footer>
     </>
   );
 }

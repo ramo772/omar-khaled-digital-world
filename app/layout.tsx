@@ -1,49 +1,54 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { themeInitScript } from '@/src/theme/theme';
+import { ThemeProvider } from '@/src/theme/ThemeProvider';
+import { identity } from '@/src/content/portfolio';
 import './globals.css';
 
-// Trusted origin returned by Sites; never derive social URLs from forwarded headers.
-const siteOrigin = new URL(
-  'https://omar-khaled-small-digital-world.omarkhaledibraheem.chatgpt.site',
-);
-const socialImage = new URL('/og.png', siteOrigin).href;
+/**
+ * Deployment origin, set at build time (e.g. VITE_SITE_URL=https://omar.pages.dev).
+ * Without it, metadata stays relative and the site is not indexed.
+ * VITE_SITE_INDEX=true opts in to search indexing for a public launch.
+ */
+const siteUrl = import.meta.env.VITE_SITE_URL as string | undefined;
+const indexable = import.meta.env.VITE_SITE_INDEX === 'true';
+const title = `${identity.name} — ${identity.currentRole}`;
+const description = `${identity.name}: ${identity.currentRole} at ${identity.currentOrganization}, working on ${identity.currentProject}. ${identity.focus}. A small, explorable digital engineering world.`;
+
 export const metadata: Metadata = {
-  metadataBase: siteOrigin,
-  title: 'Omar Khaled — A Small Digital World',
-  description:
-    'A small, explorable engineering world by Omar Khaled. Phase 1 foundation: an original 3D workshop, human avatar, and AI learning lab.',
-  alternates: { canonical: siteOrigin.href },
-  robots: { index: false, follow: false },
+  ...(siteUrl ? { metadataBase: new URL(siteUrl), alternates: { canonical: '/' } } : {}),
+  title,
+  description,
+  robots: { index: indexable, follow: indexable },
+  icons: { icon: '/favicon.svg' },
   openGraph: {
-    title: 'Omar Khaled — A Small Digital World',
-    description:
-      'Software engineering. A little world of building and curiosity.',
+    title,
+    description,
     type: 'website',
-    url: siteOrigin.href,
-    images: [
-      {
-        url: socialImage,
-        width: 1730,
-        height: 909,
-        alt: "Omar Khaled's small digital engineering world",
-      },
-    ],
+    ...(siteUrl ? { url: siteUrl } : {}),
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: `${identity.name}’s small digital engineering world` }],
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Omar Khaled — A Small Digital World',
-    description:
-      'Software engineering. A little world of building and curiosity.',
-    images: [socialImage],
-  },
+  twitter: { card: 'summary_large_image', title, description, images: ['/og.jpg'] },
 };
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f3efe6' },
+    { media: '(prefers-color-scheme: dark)', color: '#121824' },
+  ],
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    // data-theme is set by the inline script before first paint, so React must not warn about it.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
