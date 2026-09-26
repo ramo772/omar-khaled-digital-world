@@ -1,15 +1,11 @@
-/**
- * Omar's look, shared by the 3D figure (OmarFigure/OmarHead) and the 2D
- * loader portrait (OmarPortrait) so both always show the same person.
- * Plain data, no Three.js. Source of truth: Omar's real photo.
- */
+/** Omar's in-world character palette, grounded in his real photo. */
 export const omarLook = {
-  // Light-medium warm tan. Deliberately held brighter than the orange museum
-  // lighting in the photo so Omar does not read too dark in the night scene.
-  skin: '#d8a27c',
-  skinShade: '#bd805f',
+  // The museum reference is very warm, so the game material is deliberately
+  // less saturated to stay a natural light-medium tan under every day phase.
+  skin: '#c99a78',
+  skinShade: '#ad735b',
   hair: '#0d0c0c',
-  hairHighlight: '#292526',
+  hairHighlight: '#1b191a',
   beard: '#121010',
   frames: '#0a0a0b',
   eyes: '#1c1411',
@@ -26,36 +22,34 @@ export const omarLook = {
 
 /**
  * Head geometry in head-local units: origin at the chin line, +y up, face
- * toward +z. The face is an ellipsoid (slightly oval, not square). Both the
- * 3D head and the SVG portrait are generated from these numbers.
+ * toward +z. The narrower x radius gives Omar a slim oval silhouette.
  */
 export const headSpec = {
   center: 0.31,
-  rx: 0.26,
-  ry: 0.325,
-  rz: 0.245,
-  eyes: { x: 0.078, y: 0.35, w: 0.03, h: 0.038 },
-  /** Small, thin, softly rectangular lenses fitted close around the eyes. */
+  rx: 0.218,
+  ry: 0.34,
+  rz: 0.218,
+  eyes: { x: 0.069, y: 0.35, w: 0.03, h: 0.038 },
+  /** Medium, softly rectangular lenses fitted close around the eyes. */
   lens: {
-    x: 0.078,
+    x: 0.071,
     y: 0.351,
-    w: 0.125,
-    h: 0.072,
-    radius: 0.012,
-    side: 0.008,
-    top: 0.012,
+    w: 0.132,
+    h: 0.083,
+    radius: 0.029,
+    side: 0.006,
+    top: 0.008,
   },
-  bridge: { y: 0.356, w: 0.032 },
-  brows: { x: 0.082, y: 0.416, w: 0.096, h: 0.022, tilt: 0.08 },
-  nose: { y: 0.275, w: 0.052, h: 0.072 },
-  moustache: { y: 0.211, w: 0.164, h: 0.03 },
-  mouth: { y: 0.165, w: 0.11, h: 0.03 },
-  /** Beard follows the jaw: bare upper cheeks, beard below this line (fuller at the chin). */
-  beardLine: { center: 0.225, side: 0.345 },
-  chin: { y: 0.025, rx: 0.115, ry: 0.06, z: 0.15 },
+  bridge: { y: 0.356, w: 0.031 },
+  brows: { x: 0.071, y: 0.418, w: 0.087, h: 0.017, tilt: 0.07 },
+  nose: { y: 0.273, w: 0.048, h: 0.075 },
+  moustache: { y: 0.205, w: 0.148, h: 0.025 },
+  mouth: { y: 0.163, w: 0.102, h: 0.027 },
+  /** High visibility through the cheeks; the beard stays close to the jaw. */
+  beardLine: { center: 0.095, side: 0.195 },
   /** Hairline: low at the back and sides, higher over the forehead. */
-  hairline: { front: 0.495, side: 0.405, back: 0.255 },
-  ears: { x: 0.258, y: 0.305 },
+  hairline: { front: 0.49, side: 0.335, back: 0.25 },
+  ears: { x: 0.219, y: 0.305 },
 } as const;
 
 /** z of the face surface at (x, y) on the head ellipsoid (0 outside it). */

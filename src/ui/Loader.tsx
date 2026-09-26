@@ -4,13 +4,19 @@ import OmarPortrait from './OmarPortrait';
 export type LoadStage = 'boot' | 'hydrated' | 'code' | 'scene' | 'ready';
 
 /** Each value is a real milestone, never a timer. */
-export const stageProgress: Record<LoadStage, number> = { boot: 0.08, hydrated: 0.25, code: 0.62, scene: 0.85, ready: 1 };
+export const stageProgress: Record<LoadStage, number> = {
+  boot: 0.08,
+  hydrated: 0.25,
+  code: 0.62,
+  scene: 0.85,
+  ready: 1,
+};
 const stageLabel: Record<LoadStage, string> = {
   boot: 'Loading…',
   hydrated: 'Loading the 3D engine…',
   code: 'Building the island…',
   scene: 'Switching on the lights…',
-  ready: 'Welcome in',
+  ready: 'Ready',
 };
 
 /**
@@ -18,7 +24,13 @@ const stageLabel: Record<LoadStage, string> = {
  * the first paint, in the right theme) and removed as soon as the world is
  * ready. Hidden without JavaScript via a <noscript> style in the layout.
  */
-export default function Loader({ stage, leaving }: { stage: LoadStage; leaving: boolean }) {
+export default function Loader({
+  stage,
+  leaving,
+}: {
+  stage: LoadStage;
+  leaving: boolean;
+}) {
   const progress = stageProgress[stage];
   const R = 104;
   const C = 2 * Math.PI * R;
@@ -41,12 +53,13 @@ export default function Loader({ stage, leaving }: { stage: LoadStage; leaving: 
           <OmarPortrait size={176} className="loader-portrait" />
         </div>
         <p className="loader-hello">
-          Hi, I’m {identity.name.split(' ')[0]} <span aria-hidden="true">👋</span>
+          Hi, I’m {identity.name.split(' ')[0]}{' '}
+          <span aria-hidden="true">👋</span>
         </p>
         <p className="loader-welcome">Welcome to my digital world</p>
-        <p className="loader-stage" aria-live="polite">
+        <span className="sr-only" aria-live="polite">
           {stageLabel[stage]}
-        </p>
+        </span>
       </div>
     </div>
   );

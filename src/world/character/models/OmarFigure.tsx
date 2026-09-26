@@ -16,7 +16,7 @@ import OmarHead from './OmarHead';
 
 /**
  * A stylised miniature of Omar, modelled from his photo: light-medium warm tan
- * skin, dense black curls, full black beard, black softly-rectangular glasses,
+ * skin, dense irregular curls, a close jaw-following beard, black softly-rectangular glasses,
  * off-white tee with thin dark stripes, dark trousers, white sneakers, a
  * smartwatch. Original geometry — not a copy of any toy or game character.
  * The head is slightly oversized so the face reads at gameplay distance.
@@ -27,6 +27,7 @@ const tones = [
   'skin',
   'skinShade',
   'hair',
+  'hairHighlight',
   'beard',
   'frames',
   'eyes',
@@ -55,6 +56,8 @@ function useMaterials() {
     const m = Object.fromEntries(
       Object.entries(colors).map(([k, c]) => [k, make(c)]),
     ) as Record<Tone, MeshStandardMaterial>;
+    m.hair.roughness = 0.8;
+    m.hairHighlight.roughness = 0.76;
     const knit = canvasTexture('omar-tshirt-v2', 96, 96, (g, w, h) => {
       g.fillStyle = omarLook.shirt;
       g.fillRect(0, 0, w, h);
@@ -226,9 +229,22 @@ export default function OmarFigure({
           material={mat.trousers}
           castShadow
         />
-        {/* Relaxed striped tee (box UVs keep the stripes horizontal on every side) */}
-        <Part p={[0, 0.34, 0]} s={[0.5, 0.52, 0.28]} m={mat.shirt} />
-        <Part p={[0, 0.605, 0]} s={[0.36, 0.03, 0.22]} m={mat.shirt} />
+        {/* Relaxed striped tee with softened miniature-figure edges. */}
+        <RoundedBox
+          args={[0.5, 0.52, 0.28]}
+          radius={0.045}
+          smoothness={3}
+          position={[0, 0.34, 0]}
+          material={mat.shirt}
+          castShadow
+        />
+        <RoundedBox
+          args={[0.36, 0.045, 0.22]}
+          radius={0.018}
+          smoothness={3}
+          position={[0, 0.605, 0]}
+          material={mat.shirt}
+        />
         <mesh
           geometry={unitCylinder}
           material={mat.skin}
@@ -238,7 +254,14 @@ export default function OmarFigure({
         {/* Arms: shoulder → elbow joints so the idle pose can cross them, like the photo */}
         {[0.31, -0.31].map((x, i) => (
           <group key={x} ref={shoulders[i]} position={[x, 0.55, 0]}>
-            <Part p={[0, -0.11, 0]} s={[0.155, 0.24, 0.175]} m={mat.shirt} />
+            <RoundedBox
+              args={[0.155, 0.24, 0.175]}
+              radius={0.035}
+              smoothness={3}
+              position={[0, -0.11, 0]}
+              material={mat.shirt}
+              castShadow
+            />
             <Part p={[0, -0.27, 0]} s={[0.115, 0.1, 0.125]} m={mat.skin} />
             <group ref={elbows[i]} position={[0, -0.3, 0]}>
               <RoundedBox
