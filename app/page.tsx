@@ -12,7 +12,7 @@ export default function Page() {
           <p className="eyebrow">The readable version</p>
           <h2>Omar’s portfolio, in plain text</h2>
           <p>
-            {identity.currentRole} at {identity.currentOrganization} · {identity.focus} · {identity.location}
+            {identity.currentRole} · {identity.status} · {identity.location}
           </p>
         </header>
         <Profile idPrefix="section" />

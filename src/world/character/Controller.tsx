@@ -1,7 +1,11 @@
 /* oxlint-disable react/react-compiler -- The frame loop intentionally mutates shared input refs and Three.js transforms outside React rendering. React state must not update on every frame. */
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { ConeGeometry, MeshBasicMaterial, RingGeometry, type Group } from 'three';
+import { CircleGeometry, ConeGeometry, MeshBasicMaterial, RingGeometry, SpriteMaterial, type Group, type PointLight } from 'three';
+import { onNightMix } from '../materials/registry';
+import { identity } from '@/src/content/portfolio';
+import { canvasTexture } from '../materials/canvas';
+import { glowDisc, playerTag } from '../materials/painters';
 import Avatar from './Avatar';
 import { AVATAR, type AvatarMotion } from './avatar-contract';
 import { destinationById, obstacles, spawn, worldBounds, type DestinationId } from '@/src/data/world-map';
@@ -46,13 +50,36 @@ export default function Controller({
   const sample = useRef(0);
   const lastNear = useRef<DestinationId | null>(null);
   const yaw = useRef(0.6);
+  const fill = useRef<PointLight>(null);
+  // Night: a soft warm key light on Omar from the camera side, so his real
+  // skin tone reads instead of being darkened by the night palette.
+  useEffect(
+    () =>
+      onNightMix((k) => {
+        if (fill.current) fill.current.intensity = 2.6 * k;
+      }),
+    [],
+  );
   const art = useMemo(
     () => ({
-      ring: new RingGeometry(0.4, 0.47, 40),
-      ringMaterial: new MeshBasicMaterial({ color: '#df7950', transparent: true, opacity: 0.75, depthWrite: false }),
-      chevron: new ConeGeometry(0.13, 0.22, 4),
-      // Drawn on top of everything so Omar is never lost behind a building.
+      ring: new RingGeometry(0.42, 0.47, 48),
+      ringMaterial: new MeshBasicMaterial({ color: '#df7950', transparent: true, opacity: 0.85, depthWrite: false }),
+      disc: new CircleGeometry(0.52, 40),
+      discMaterial: new MeshBasicMaterial({
+        map: canvasTexture('glow-disc', 128, 128, glowDisc),
+        color: '#df7950',
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+      }),
+      chevron: new ConeGeometry(0.12, 0.2, 4),
+      // Marker and name tag draw on top of everything, so Omar is never lost behind a building.
       chevronMaterial: new MeshBasicMaterial({ color: '#df7950', depthTest: false, transparent: true, opacity: 0.95 }),
+      tag: new SpriteMaterial({
+        map: canvasTexture('player-tag', 192, 72, playerTag(identity.name.split(' ')[0].toUpperCase())),
+        depthTest: false,
+        transparent: true,
+      }),
     }),
     [],
   );
@@ -151,9 +178,13 @@ export default function Controller({
       <group ref={heading}>
         <Avatar motion={motion} reducedMotion={reducedMotion} />
       </group>
-      <mesh geometry={art.ring} material={art.ringMaterial} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} />
+      <pointLight ref={fill} position={[0.7, 2.3, 1.3]} distance={3.6} decay={2} color="#ffe2c4" intensity={0} />
+      {/* Player indicator: soft disc + ring at the feet, chevron and name tag above the head */}
+      <mesh geometry={art.disc} material={art.discMaterial} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, 0]} />
+      <mesh geometry={art.ring} material={art.ringMaterial} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.022, 0]} />
       <group ref={marker} position={[0, AVATAR.markerHeight, 0]}>
         <mesh geometry={art.chevron} material={art.chevronMaterial} rotation={[Math.PI, Math.PI / 4, 0]} renderOrder={10} />
+        <sprite material={art.tag} position={[0, 0.3, 0]} scale={[0.62, 0.232, 1]} renderOrder={11} />
       </group>
     </group>
   );

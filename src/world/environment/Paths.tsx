@@ -8,9 +8,8 @@ import {
   Object3D,
   Vector3,
 } from 'three';
-import { pathPoints, skillsSpur } from '@/src/data/world-map';
 import { material, unitBox } from '../materials/registry';
-import { Lamp, type V3 } from './Primitives';
+import { storyCurve } from './pathing';
 
 function ribbon(curve: CatmullRomCurve3, offset: number, width: number, y: number, segments = 160) {
   const vertices: number[] = [];
@@ -33,9 +32,6 @@ function ribbon(curve: CatmullRomCurve3, offset: number, width: number, y: numbe
   g.computeVertexNormals();
   return g;
 }
-
-const curveOf = (points: [number, number][]) =>
-  new CatmullRomCurve3(points.map(([x, z]) => new Vector3(x, 0, z)));
 
 const PULSES = 9;
 
@@ -68,40 +64,22 @@ function Pulses({ curve, animate }: { curve: CatmullRomCurve3; animate: boolean 
   return <instancedMesh ref={mesh} args={[unitBox, material('pulse'), PULSES]} frustumCulled={false} />;
 }
 
-/** Lamp posts along the route (warm at night). */
-const lamps: V3[] = [
-  [-4.7, 0, 4.2],
-  [-7.6, 0, 2.9],
-  [-4.1, 0, -0.9],
-  [-1.3, 0, -0.2],
-  [3.0, 0, 1.55],
-  [7.1, 0, 1.5],
-  [4.6, 0, 3.9],
-];
-
 export default function Paths({ animate }: { animate: boolean }) {
-  const { main, mainTraces, spur, spurTraces, curve } = useMemo(() => {
-    const c = curveOf(pathPoints);
-    const s = curveOf(skillsSpur);
+  const { main, traces, curve } = useMemo(() => {
+    const c = storyCurve();
     return {
       curve: c,
       main: ribbon(c, 0, 0.56, 0.028),
-      mainTraces: [ribbon(c, 0.64, 0.028, 0.034), ribbon(c, -0.64, 0.028, 0.034)],
-      spur: ribbon(s, 0, 0.42, 0.026, 40),
-      spurTraces: [ribbon(s, 0.5, 0.024, 0.032, 40), ribbon(s, -0.5, 0.024, 0.032, 40)],
+      traces: [ribbon(c, 0.64, 0.028, 0.034), ribbon(c, -0.64, 0.028, 0.034)],
     };
   }, []);
   return (
     <group>
       <mesh geometry={main} material={material('path')} receiveShadow />
-      <mesh geometry={spur} material={material('path')} receiveShadow />
-      {[...mainTraces, ...spurTraces].map((g, i) => (
+      {traces.map((g, i) => (
         <mesh key={i} geometry={g} material={material('trace')} />
       ))}
       <Pulses curve={curve} animate={animate} />
-      {lamps.map((p, i) => (
-        <Lamp key={i} position={p} />
-      ))}
     </group>
   );
 }

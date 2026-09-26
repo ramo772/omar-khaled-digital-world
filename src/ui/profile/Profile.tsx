@@ -12,13 +12,14 @@ import {
 } from '@/src/content/portfolio';
 import { explorationTopics } from '@/src/content/exploration';
 import type { Project } from '@/src/content/types';
+import { features } from '@/src/config/features';
 
 /**
  * The readable portfolio. Server-compatible (no hooks), so the same sections
  * render in the static HTML for recruiters, search engines and no-WebGL
  * visitors, and inside Quick View / place panels.
  */
-export const profileSections = [
+const allSections = [
   { id: 'about', label: 'About' },
   { id: 'experience', label: 'Experience' },
   { id: 'projects', label: 'Projects' },
@@ -27,7 +28,9 @@ export const profileSections = [
   { id: 'education', label: 'Education' },
   { id: 'contact', label: 'Contact' },
 ] as const;
-export type ProfileSectionId = (typeof profileSections)[number]['id'];
+export type ProfileSectionId = (typeof allSections)[number]['id'];
+/** Visible sections; AI exploration follows the aiLab feature flag. */
+export const profileSections = allSections.filter((s) => s.id !== 'ai' || features.aiLab);
 
 const External = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <a href={href} target="_blank" rel="noopener noreferrer" className="text-link">
@@ -43,23 +46,27 @@ export function AboutSection() {
       <p>{identity.origin}</p>
       <dl className="facts">
         <div>
-          <dt>Now</dt>
-          <dd>
-            {identity.currentRole}, {identity.currentOrganization}
-          </dd>
+          <dt>Role</dt>
+          <dd>{identity.currentRole}</dd>
         </div>
         <div>
-          <dt>Focus</dt>
-          <dd>{identity.focus}</dd>
+          <dt>Now</dt>
+          <dd>{identity.status}</dd>
         </div>
         <div>
           <dt>Based in</dt>
           <dd>{identity.location}</dd>
         </div>
         <div>
-          <dt>Exploring</dt>
-          <dd>{identity.exploring}</dd>
+          <dt>Education</dt>
+          <dd>{education.degree}</dd>
         </div>
+        {features.aiLab && (
+          <div>
+            <dt>Exploring</dt>
+            <dd>{identity.exploring}</dd>
+          </div>
+        )}
       </dl>
     </>
   );
@@ -179,7 +186,9 @@ export function SkillsSection() {
           </ul>
         </div>
       ))}
-      <p className="note">Everything above is from my CV. Things I am still learning live in the AI Lab.</p>
+      <p className="note">
+        Everything above is from my CV.{features.aiLab && ' Things I am still learning live in the AI Lab.'}
+      </p>
     </div>
   );
 }

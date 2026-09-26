@@ -16,12 +16,16 @@ import TouchControls from './TouchControls';
 import ThemeToggle from './ThemeToggle';
 import Intro from './Intro';
 import Dock from './Dock';
-import WorkShelf from './WorkShelf';
+import Loader, { type LoadStage } from './Loader';
 import WorldSettings from './WorldSettings';
 import QuickView from './panels/QuickView';
 import PlacePanel from './panels/PlacePanel';
 
-const World = lazy(() => import('@/src/world/World'));
+const loadWorld = () => import('@/src/world/World');
+const World = lazy(loadWorld);
+const STAGE_ORDER: LoadStage[] = ['boot', 'hydrated', 'code', 'scene', 'ready'];
+/** Never hold the portfolio hostage: after this, the loader steps aside even if the world is still loading. */
+const LOADER_MAX_MS = 3200;
 
 type Panel = { kind: 'place'; id: DestinationId; project?: string } | { kind: 'quick'; section?: ProfileSectionId } | null;
 type WorldStatus = 'pending' | 'ok' | 'forced' | 'unsupported' | 'failed';
@@ -39,13 +43,34 @@ export default function Portfolio() {
   const controls = useRef<Controls>({ touch: { x: 0, z: 0 }, target: null, jump: null, position: { x: spawn[0], z: spawn[1] } });
   const stage = useRef<HTMLElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
+  const [loadStage, setLoadStage] = useState<LoadStage>('boot');
+  const [capped, setCapped] = useState(false);
+  const [loaderGone, setLoaderGone] = useState(false);
+  const advance = useCallback((next: LoadStage) => {
+    setLoadStage((cur) => (STAGE_ORDER.indexOf(next) > STAGE_ORDER.indexOf(cur) ? next : cur));
+  }, []);
 
   useEffect(() => {
     // Capability detection after hydration keeps server and first client render identical.
     const webgl = detectWebGL();
     // oxlint-disable-next-line react/react-compiler -- one-time browser capability probe after hydration.
     setStatus(webgl.ok ? 'ok' : (webgl.reason ?? 'unsupported'));
-  }, []);
+    advance('hydrated');
+    // Real milestone: the 3D code has downloaded (React.lazy reuses this same request).
+    if (webgl.ok) void loadWorld().then(() => advance('code'));
+    const cap = window.setTimeout(() => setCapped(true), LOADER_MAX_MS);
+    return () => window.clearTimeout(cap);
+  }, [advance]);
+
+  // Leave as soon as the world has drawn its first frames, right away if there is no 3D world,
+  // and never later than LOADER_MAX_MS.
+  const loaderLeaving = loadStage === 'ready' || (status !== 'pending' && status !== 'ok') || capped;
+  useEffect(() => {
+    if (!loaderLeaving) return;
+    const id = window.setTimeout(() => setLoaderGone(true), reducedMotion ? 220 : 650);
+    return () => window.clearTimeout(id);
+  }, [loaderLeaving, reducedMotion]);
+  const onWorldStage = useCallback((s: 'scene' | 'ready') => advance(s), [advance]);
 
   const worldOn = status === 'ok' && !textOnly;
   const active = worldOn && entered && !panel && visible;
@@ -119,14 +144,7 @@ export default function Portfolio() {
         </div>
       </header>
 
-      <Intro
-        entered={entered && worldOn}
-        canExplore={worldOn}
-        onEnter={enter}
-        onQuickView={() => openQuick()}
-        onProject={openProject}
-      />
-      {!(entered && worldOn) && <WorkShelf className="shelf-floating" onOpen={openProject} />}
+      <Intro entered={entered && worldOn} canExplore={worldOn} onEnter={enter} onQuickView={() => openQuick()} />
 
       <section
         ref={stage}
@@ -160,6 +178,8 @@ export default function Portfolio() {
                 onPosition={onPosition}
                 onSlow={slow}
                 onLost={onWorldError}
+                onStage={onWorldStage}
+                intro={!loaderGone}
               />
             </Suspense>
           </WorldBoundary>
@@ -211,6 +231,8 @@ export default function Portfolio() {
       {active && <TouchControls controls={controls} />}
 
       <Dock current={active ? near : null} onSelect={(id) => openPlace(id)} />
+
+      {!loaderGone && <Loader stage={loadStage} leaving={loaderLeaving} />}
 
       <QuickView open={panel?.kind === 'quick'} section={panel?.kind === 'quick' ? panel.section : undefined} onClose={close} />
       <PlacePanel

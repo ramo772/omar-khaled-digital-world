@@ -12,7 +12,7 @@ import './globals.css';
 const siteUrl = import.meta.env.VITE_SITE_URL as string | undefined;
 const indexable = import.meta.env.VITE_SITE_INDEX === 'true';
 const title = `${identity.name} — ${identity.currentRole}`;
-const description = `${identity.name}: ${identity.currentRole} at ${identity.currentOrganization}, working on ${identity.currentProject}. ${identity.focus}. A small, explorable digital engineering world.`;
+const description = `${identity.name}, ${identity.currentRole}. ${identity.status}. Projects, experience and skills from my CV — in a small, explorable digital engineering world.`;
 
 export const metadata: Metadata = {
   ...(siteUrl ? { metadataBase: new URL(siteUrl), alternates: { canonical: '/' } } : {}),
@@ -50,6 +50,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* Without JavaScript there is nothing to load: never show the intro loader. */}
+        <noscript dangerouslySetInnerHTML={{ __html: '<style>.loader{display:none!important}</style>' }} />
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>

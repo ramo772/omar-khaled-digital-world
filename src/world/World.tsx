@@ -10,6 +10,8 @@ import type { ResolvedTheme } from '@/src/theme/theme';
 import Island from './environment/Island';
 import Paths from './environment/Paths';
 import Infrastructure from './environment/Infrastructure';
+import Landscape from './environment/Landscape';
+import { features } from '@/src/config/features';
 import Lighting from './environment/Lighting';
 import AboutDesk from './locations/AboutDesk';
 import CareerTrail from './locations/CareerTrail';
@@ -33,6 +35,18 @@ function QualityMonitor({ onSlow }: { onSlow: () => void }) {
       if (s.time / s.frames > 1 / 28) onSlow();
       s.done = true;
     }
+  });
+  return null;
+}
+
+/** Reports real loading milestones: renderer created, then the first frames drawn. */
+function ReadyProbe({ onStage }: { onStage?: (s: 'scene' | 'ready') => void }) {
+  const frames = useRef(0);
+  useEffect(() => onStage?.('scene'), [onStage]);
+  useFrame(() => {
+    if (frames.current > 2) return;
+    frames.current++;
+    if (frames.current === 3) onStage?.('ready');
   });
   return null;
 }
@@ -66,6 +80,10 @@ export interface WorldProps {
   onPosition: (p: Point) => void;
   onSlow: () => void;
   onLost: () => void;
+  /** Loading milestones for the intro loader. */
+  onStage?: (s: 'scene' | 'ready') => void;
+  /** True while the intro loader is still on screen (camera waits, slightly pulled back). */
+  intro?: boolean;
 }
 
 /** Composition only: every place, the character and the camera are separate modules. */
@@ -85,6 +103,8 @@ export default function World({
   onPosition,
   onSlow,
   onLost,
+  onStage,
+  intro = false,
 }: WorldProps) {
   const animate = !reducedMotion && !paused;
   return (
@@ -96,11 +116,13 @@ export default function World({
       frameloop={paused ? 'demand' : 'always'}
       gl={{ antialias: !lowQuality, alpha: true, powerPreference: 'high-performance' }}
     >
-      <CameraRig zoom={zoom} follow={follow} controls={controls} reducedMotion={reducedMotion} />
+      <CameraRig zoom={zoom} follow={follow} controls={controls} reducedMotion={reducedMotion} intro={intro} />
+      <ReadyProbe onStage={onStage} />
       <QualityMonitor onSlow={onSlow} />
       <ContextGuard onLost={onLost} />
       <Lighting theme={theme} reducedMotion={reducedMotion} shadows={!lowQuality} />
       <Island name={identity.name.split(' ')[0]} />
+      <Landscape animate={animate} />
       <Paths animate={animate} />
       <Infrastructure animate={animate} />
       <Landmark onActivate={() => onSelect('about')}>
@@ -110,9 +132,11 @@ export default function World({
         <CareerTrail animate={animate} />
       </Landmark>
       <ProjectWorkshop animate={animate} onOpen={() => onSelect('projects')} onProject={onProject} />
-      <Landmark onActivate={() => onSelect('ai')}>
-        <AILab animate={animate} />
-      </Landmark>
+      {features.aiLab && (
+        <Landmark onActivate={() => onSelect('ai')}>
+          <AILab animate={animate} />
+        </Landmark>
+      )}
       <Landmark onActivate={() => onSelect('skills')}>
         <SkillsBench />
       </Landmark>

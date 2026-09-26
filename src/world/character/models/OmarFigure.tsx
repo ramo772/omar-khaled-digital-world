@@ -1,34 +1,26 @@
 /* oxlint-disable react/react-compiler -- The per-frame animation mutates Three.js transforms and shared materials by design. */
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { MeshStandardMaterial, TorusGeometry, type Group } from 'three';
-import { unitBox, unitSphere, getNightMix } from '../../materials/registry';
+import { MeshStandardMaterial, type Group } from 'three';
+import { RoundedBox } from '@react-three/drei';
+import { unitBox, unitCylinder, unitSphere, getNightMix } from '../../materials/registry';
 import { canvasTexture } from '../../materials/canvas';
 import { tshirt } from '../../materials/painters';
 import type { AvatarModelProps } from '../avatar-contract';
+import { omarLook } from '../avatar-look';
+import OmarHead from './OmarHead';
 
 /**
- * A stylised, blocky miniature developer inspired by Omar's photo: dark curly
- * hair, full beard, round glasses, warm medium-brown skin, striped off-white
- * tee, dark trousers, white sneakers, a smartwatch. Original geometry — not a
- * copy of any toy or game character. Oversized head so the glasses and beard
- * still read at gameplay distance.
+ * A stylised miniature of Omar, modelled from his photo: light-medium warm tan
+ * skin, dense black curls, full black beard, black softly-rectangular glasses,
+ * off-white tee with thin dark stripes, dark trousers, white sneakers, a
+ * smartwatch. Original geometry — not a copy of any toy or game character.
+ * The head is slightly oversized so the face reads at gameplay distance.
  *
  * Y-up, feet at y = 0, facing +Z. Omar's right side is -X.
  */
-const colors = {
-  skin: '#9e6a4e',
-  skinShade: '#87573d',
-  hair: '#1d1714',
-  beard: '#241b17',
-  frames: '#121212',
-  eyes: '#17120f',
-  teeth: '#f3ece2',
-  trousers: '#27303d',
-  shoe: '#efebe3',
-  sole: '#3b3a38',
-  watch: '#101010',
-} as const;
+const tones = ['skin', 'skinShade', 'hair', 'beard', 'frames', 'eyes', 'teeth', 'lip', 'trousers', 'shoe', 'sole', 'watch'] as const;
+const colors = Object.fromEntries(tones.map((t) => [t, omarLook[t]])) as Record<(typeof tones)[number], string>;
 type Tone = keyof typeof colors | 'shirt';
 
 function useMaterials() {
@@ -46,37 +38,16 @@ function Part({ p, s, m, r }: { p: V3; s: V3; m: MeshStandardMaterial; r?: V3 })
   return <mesh geometry={unitBox} material={m} position={p} scale={s} rotation={r} castShadow />;
 }
 
-/** Head measurements (a big, friendly block). */
-const HW = 0.56;
-const HH = 0.54;
-const HD = 0.5;
-const FACE = HD / 2;
-
-/** Deterministic curl placement so the silhouette reads as curly, not as a helmet. */
-const curls: [number, number, number, number][] = (() => {
-  const out: [number, number, number, number][] = [];
-  let seed = 3;
-  const r = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    out.push([Math.cos(a) * 0.22, HH + 0.02 + r() * 0.05, Math.sin(a) * 0.19 - 0.02, 0.085 + r() * 0.03]);
-  }
-  for (let i = 0; i < 6; i++) out.push([-0.15 + i * 0.06, HH + 0.07 + r() * 0.03, -0.02 + (r() - 0.5) * 0.14, 0.09]);
-  for (let i = 0; i < 5; i++) out.push([-0.2 + i * 0.1, HH - 0.04, FACE - 0.03, 0.075]);
-  for (let i = 0; i < 5; i++) out.push([-0.22 + i * 0.11, HH * 0.62, -FACE + 0.02, 0.085]);
-  return out;
-})();
-
 export default function OmarFigure({ motion, reducedMotion }: AvatarModelProps) {
   const mat = useMaterials();
-  const rim = useMemo(() => new TorusGeometry(0.088, 0.026, 8, 22), []);
   const body = useRef<Group>(null);
   const torso = useRef<Group>(null);
   const head = useRef<Group>(null);
   const legs = [useRef<Group>(null), useRef<Group>(null)];
   const shoulders = [useRef<Group>(null), useRef<Group>(null)];
   const elbows = [useRef<Group>(null), useRef<Group>(null)];
-  const state = useRef({ phase: 0, speed: 0, cross: 0, night: -1 });
+  const eyes = useRef<Group>(null);
+  const state = useRef({ phase: 0, speed: 0, cross: 0, wave: 0, night: -1 });
 
   useFrame(({ clock }, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
@@ -84,16 +55,21 @@ export default function OmarFigure({ motion, reducedMotion }: AvatarModelProps) 
     const m = motion.current;
     const still = reducedMotion;
 
-    // Keep Omar readable after sunset with a faint self-illumination.
+    // A faint self-illumination at night; the fill light in Controller keeps skin tone natural.
     const night = getNightMix();
     if (night !== s.night) {
       s.night = night;
-      Object.values(mat).forEach((x) => (x.emissiveIntensity = x === mat.shirt ? 0.16 * night : 0.2 * night));
+      Object.values(mat).forEach((x) => (x.emissiveIntensity = (x === mat.shirt ? 0.07 : 0.06) * night));
     }
 
     s.speed += ((m?.moving ? 1 : 0) - s.speed) * Math.min(1, dt * 10);
     s.phase += dt * 9.5 * s.speed;
-    const wantCross = !still && !m?.moving && (m?.idle ?? 0) > 2.2 ? 1 : 0;
+    // Idle sequence (never with reduced motion): turn to the visitor, a short
+    // friendly wave, then arms crossed like the reference photo.
+    const idle = m?.moving ? 0 : (m?.idle ?? 0);
+    const wantWave = !still && idle > 1.4 && idle < 3.6 ? 1 : 0;
+    const wantCross = !still && idle > 3.8 ? 1 : 0;
+    s.wave += (wantWave - s.wave) * Math.min(1, dt * 6);
     s.cross += (wantCross - s.cross) * Math.min(1, dt * 5);
 
     const swing = still ? 0 : Math.sin(s.phase) * s.speed;
@@ -103,105 +79,67 @@ export default function OmarFigure({ motion, reducedMotion }: AvatarModelProps) 
       torso.current.rotation.x = still ? 0 : 0.07 * s.speed;
       torso.current.scale.y = still ? 1 : 1 + Math.sin(t * 2.1) * 0.01 * (1 - s.speed);
     }
-    if (head.current) head.current.rotation.y = still ? 0 : Math.sin(t * 0.45) * 0.22 * (1 - s.speed) * (1 - s.cross * 0.5);
+    if (head.current) {
+      head.current.rotation.y = still ? 0 : Math.sin(t * 0.45) * 0.22 * (1 - s.speed) * (1 - s.cross * 0.5) * (1 - s.wave);
+      head.current.rotation.z = still ? 0 : 0.08 * s.wave;
+    }
+    // Blink every few seconds.
+    if (eyes.current) eyes.current.scale.y = !still && t % 3.7 < 0.12 ? 0.15 : 1;
     legs.forEach((l, i) => {
       if (l.current) l.current.rotation.x = swing * 0.6 * (i ? -1 : 1);
     });
     const c = s.cross;
+    const w = s.wave;
+    const wag = Math.sin(t * 9) * 0.38;
     shoulders.forEach((sh, i) => {
       const side = i ? -1 : 1; // 0 = left (+x), 1 = right (-x)
-      if (sh.current) {
-        sh.current.rotation.x = -swing * 0.55 * side * (1 - c) + -0.5 * c;
-        sh.current.rotation.z = 0.06 * side * (1 - c);
-      }
+      if (!sh.current) return;
+      const waving = i === 1 ? w : 0;
+      sh.current.rotation.x = (-swing * 0.55 * side * (1 - c) + -0.5 * c) * (1 - waving);
+      sh.current.rotation.z = 0.06 * side * (1 - c) * (1 - waving) + -2.45 * waving;
     });
     elbows.forEach((el, i) => {
       const side = i ? -1 : 1;
-      if (el.current) {
-        el.current.rotation.x = -0.25 * s.speed * (1 - c);
-        el.current.rotation.y = 0.42 * side * c;
-        el.current.rotation.z = (-Math.PI / 2) * side * c;
-      }
+      if (!el.current) return;
+      const waving = i === 1 ? w : 0;
+      el.current.rotation.x = -0.25 * s.speed * (1 - c) * (1 - waving);
+      el.current.rotation.y = 0.42 * side * c;
+      el.current.rotation.z = (-Math.PI / 2) * side * c + (0.55 + wag) * waving;
     });
   });
 
   return (
     <group ref={body}>
-      {/* Legs */}
+      {/* Legs: dark trousers, clean white sneakers */}
       {[0.12, -0.12].map((x, i) => (
         <group key={x} ref={legs[i]} position={[x, 0.62, 0]}>
-          <Part p={[0, -0.27, 0]} s={[0.19, 0.52, 0.22]} m={mat.trousers} />
-          <Part p={[0, -0.565, 0.04]} s={[0.21, 0.1, 0.3]} m={mat.shoe} />
-          <Part p={[0, -0.615, 0.04]} s={[0.22, 0.025, 0.31]} m={mat.sole} />
+          <RoundedBox args={[0.2, 0.52, 0.23]} radius={0.04} smoothness={2} position={[0, -0.27, 0]} material={mat.trousers} castShadow />
+          <RoundedBox args={[0.22, 0.11, 0.32]} radius={0.045} smoothness={2} position={[0, -0.56, 0.045]} material={mat.shoe} castShadow />
+          <Part p={[0, -0.617, 0.045]} s={[0.225, 0.022, 0.325]} m={mat.sole} />
         </group>
       ))}
       <group ref={torso} position={[0, 0.62, 0]}>
-        <Part p={[0, 0.03, 0]} s={[0.46, 0.14, 0.26]} m={mat.trousers} />
+        <RoundedBox args={[0.47, 0.15, 0.27]} radius={0.04} smoothness={2} position={[0, 0.03, 0]} material={mat.trousers} castShadow />
+        {/* Relaxed striped tee (box UVs keep the stripes horizontal on every side) */}
         <Part p={[0, 0.34, 0]} s={[0.5, 0.52, 0.28]} m={mat.shirt} />
-        <Part p={[0, 0.62, 0]} s={[0.16, 0.08, 0.16]} m={mat.skin} />
+        <Part p={[0, 0.605, 0]} s={[0.36, 0.03, 0.22]} m={mat.shirt} />
+        <mesh geometry={unitCylinder} material={mat.skin} position={[0, 0.64, 0]} scale={[0.075, 0.08, 0.07]} />
         {/* Arms: shoulder → elbow joints so the idle pose can cross them, like the photo */}
         {[0.31, -0.31].map((x, i) => (
           <group key={x} ref={shoulders[i]} position={[x, 0.55, 0]}>
-            <Part p={[0, -0.11, 0]} s={[0.15, 0.24, 0.17]} m={mat.shirt} />
-            <Part p={[0, -0.27, 0]} s={[0.12, 0.1, 0.13]} m={mat.skin} />
+            <Part p={[0, -0.11, 0]} s={[0.155, 0.24, 0.175]} m={mat.shirt} />
+            <Part p={[0, -0.27, 0]} s={[0.115, 0.1, 0.125]} m={mat.skin} />
             <group ref={elbows[i]} position={[0, -0.3, 0]}>
-              <Part p={[0, -0.12, 0]} s={[0.12, 0.24, 0.13]} m={mat.skin} />
-              <Part p={[0, -0.29, 0]} s={[0.12, 0.1, 0.12]} m={mat.skin} />
-              {i === 0 && <Part p={[0, -0.21, 0]} s={[0.135, 0.05, 0.145]} m={mat.watch} />}
+              <RoundedBox args={[0.115, 0.24, 0.125]} radius={0.03} smoothness={2} position={[0, -0.12, 0]} material={mat.skin} castShadow />
+              {/* Rounded toy-like hand */}
+              <mesh geometry={unitSphere} material={mat.skin} position={[0, -0.29, 0.005]} scale={[0.07, 0.068, 0.072]} castShadow />
+              {i === 0 && <RoundedBox args={[0.13, 0.05, 0.14]} radius={0.015} position={[0, -0.21, 0]} material={mat.watch} />}
             </group>
           </group>
         ))}
-        {/* Head */}
+        {/* Head: see OmarHead.tsx */}
         <group ref={head} position={[0, 0.66, 0]}>
-          <Part p={[0, HH / 2, 0]} s={[HW, HH, HD]} m={mat.skin} />
-          {/* ears + nose */}
-          {[1, -1].map((side) => (
-            <Part key={side} p={[side * (HW / 2 + 0.02), HH * 0.48, 0]} s={[0.05, 0.11, 0.09]} m={mat.skinShade} />
-          ))}
-          <Part p={[0, HH * 0.42, FACE + 0.02]} s={[0.075, 0.1, 0.06]} m={mat.skinShade} />
-          {/* eyes, brows */}
-          {[1, -1].map((side) => (
-            <group key={side}>
-              <Part p={[side * 0.11, HH * 0.56, FACE + 0.005]} s={[0.05, 0.06, 0.02]} m={mat.eyes} />
-              <Part p={[side * 0.11, HH * 0.72, FACE + 0.006]} s={[0.13, 0.035, 0.02]} m={mat.hair} />
-            </group>
-          ))}
-          {/* round glasses: thick frames so they read from the camera */}
-          {[1, -1].map((side) => (
-            <mesh key={side} geometry={rim} material={mat.frames} position={[side * 0.11, HH * 0.56, FACE + 0.03]} />
-          ))}
-          <Part p={[0, HH * 0.58, FACE + 0.03]} s={[0.06, 0.022, 0.02]} m={mat.frames} />
-          {[1, -1].map((side) => (
-            <Part key={side} p={[side * (HW / 2 + 0.005), HH * 0.58, FACE / 2]} s={[0.02, 0.022, FACE]} m={mat.frames} />
-          ))}
-          {/* full beard, moustache and a big smile */}
-          <Part p={[0, HH * 0.13, FACE - 0.005]} s={[HW - 0.02, HH * 0.28, 0.05]} m={mat.beard} />
-          <Part p={[0, HH * 0.28, FACE + 0.015]} s={[0.22, 0.045, 0.04]} m={mat.beard} />
-          <Part p={[0, HH * 0.2, FACE + 0.025]} s={[0.16, 0.04, 0.02]} m={mat.teeth} />
-          {[1, -1].map((side) => (
-            <Part key={side} p={[side * (HW / 2 - 0.02), HH * 0.3, 0.02]} s={[0.06, HH * 0.55, HD - 0.06]} m={mat.beard} />
-          ))}
-          <Part p={[0, 0.0, 0.03]} s={[HW - 0.04, 0.06, HD - 0.04]} m={mat.beard} />
-          {(
-            [
-              [0, -0.01, FACE - 0.01],
-              [0.12, 0.0, FACE - 0.03],
-              [-0.12, 0.0, FACE - 0.03],
-              [0.22, 0.05, FACE - 0.1],
-              [-0.22, 0.05, FACE - 0.1],
-            ] as [number, number, number][]
-          ).map((p, i) => (
-            <mesh key={i} geometry={unitSphere} material={mat.beard} position={p} scale={[0.06, 0.06, 0.06]} />
-          ))}
-          {/* hair: a cap plus a crown of curls */}
-          <Part p={[0, HH - 0.02, -0.02]} s={[HW + 0.02, 0.12, HD]} m={mat.hair} />
-          <Part p={[0, HH * 0.62, -FACE + 0.02]} s={[HW + 0.02, HH * 0.5, 0.08]} m={mat.hair} />
-          {[1, -1].map((side) => (
-            <Part key={side} p={[side * (HW / 2 + 0.005), HH * 0.8, -0.04]} s={[0.05, 0.16, HD - 0.12]} m={mat.hair} />
-          ))}
-          {curls.map(([x, y, z, r], i) => (
-            <mesh key={i} geometry={unitSphere} material={mat.hair} position={[x, y, z]} scale={[r, r * 0.9, r]} castShadow />
-          ))}
+          <OmarHead mat={mat} eyes={eyes} />
         </group>
       </group>
     </group>

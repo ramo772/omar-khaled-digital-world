@@ -21,13 +21,12 @@ export const identity: Identity = {
   currentRole: 'Senior Software Engineer',
   currentOrganization: 'VOIS (Vodafone Intelligent Solutions)',
   shortOrganization: 'VOIS',
-  currentProject: 'TOBi',
-  currentProjectNote: 'Vodafone’s digital assistant',
-  pitch: 'Node.js, React, Next.js, PHP/Laravel and MySQL across web and mobile.',
-  focus: 'Backend / Full-Stack',
+  currentProject: 'TOBi UK',
+  // The exact public status line. Keep it short; do not expand it.
+  status: 'Currently working at VOIS, TOBi UK',
   exploring: 'AI engineering',
   summary:
-    'I work on TOBi, Vodafone’s digital assistant, at VOIS — building new features such as Ask Once, integrating with other Vodafone services, and resolving production issues. Before that I built web and mobile products across the front-end and back-end with Node.js, React, Next.js, PHP/Laravel and MySQL.',
+    'Senior Software Engineer at VOIS, currently working on TOBi UK — developing new features such as Ask Once, integrating with other Vodafone services and resolving production issues. Before VOIS I built web and mobile products across the front-end and back-end with Node.js, React, Next.js, PHP/Laravel and MySQL.',
   origin:
     'My path into software started in engineering: a Bachelor of Aeronautical Engineering (graduation project: a KJ66 micro-jet engine), then workshop and field engineering roles before moving into full-stack development.',
   location: 'Cairo, Egypt',
@@ -372,6 +371,9 @@ export const skills: SkillGroup[] = [
   },
 ];
 
+/** The curated six shown on the Skills tech board in the world (all from the CV skills list). */
+export const featuredSkills = { items: ['Node.js', 'React.js', 'Next.js', 'Laravel', 'PHP', 'MySQL'], sources: ['skills.list'] };
+
 export const education: Education = {
   institution: 'Institute of Aviation Engineering and Technology',
   degree: 'Bachelor of Aeronautical Engineering',
@@ -405,6 +407,14 @@ export const contact: ContactChannel[] = [
     value: 'in/omar-khaled-a04655111',
     href: 'https://www.linkedin.com/in/omar-khaled-a04655111/',
     sources: ['id.linkedin'],
+  },
+  {
+    // Derived from the repository link in the CV (github.com/ramo772/blog-managment-node-js).
+    kind: 'github',
+    label: 'GitHub',
+    value: 'github.com/ramo772',
+    href: 'https://github.com/ramo772',
+    sources: ['proj.blogapi.link'],
   },
   { kind: 'location', label: 'Based in', value: 'Cairo, Egypt', sources: ['id.location'] },
 ];

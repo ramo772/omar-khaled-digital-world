@@ -10,17 +10,24 @@ import type {
 } from 'three';
 import { Color as ThreeColor } from 'three';
 import { lighting, type SceneLighting } from '@/src/theme/world-tokens';
+import { features } from '@/src/config/features';
 import type { ResolvedTheme } from '@/src/theme/theme';
 import { setNightMix } from '../materials/registry';
 import type { V3 } from './Primitives';
 
-/** Warm practical lights at the landmarks. Always mounted (intensity 0 by day) so switching theme never recompiles shaders. */
-export const practicalLights: { position: V3; intensity: number; distance: number }[] = [
-  { position: [-7.7, 1.9, 3.9], intensity: 7, distance: 5.5 }, // About desk lamp
-  { position: [-0.6, 2.6, -2.2], intensity: 11, distance: 7 }, // Workshop, left bay
-  { position: [2.8, 2.6, -2.2], intensity: 11, distance: 7 }, // Workshop, right bay
-  { position: [7.45, 2.4, -2.1], intensity: 9, distance: 6 }, // AI Lab core
-  { position: [7.4, 1.8, 4.6], intensity: 6, distance: 5 }, // Next / contact
+/**
+ * Warm practical lights at the landmarks. Always mounted so switching theme
+ * never recompiles shaders; `day` is the fraction kept on in daylight
+ * (the workshop interior stays softly lit, like the reference).
+ */
+export const practicalLights: { position: V3; intensity: number; distance: number; day: number }[] = [
+  { position: [-7.7, 1.9, 3.9], intensity: 7, distance: 5.5, day: 0 }, // About desk lamp
+  { position: [-0.6, 2.6, -2.2], intensity: 11, distance: 7, day: 0.22 }, // Workshop, left bay
+  { position: [2.8, 2.6, -2.2], intensity: 11, distance: 7, day: 0.22 }, // Workshop, right bay
+  features.aiLab
+    ? { position: [7.45, 2.4, -2.1], intensity: 9, distance: 6, day: 0 } // AI Lab core
+    : { position: [-0.6, 2.2, 4.6], intensity: 7, distance: 5, day: 0 }, // Skills station
+  { position: [7.4, 1.8, 4.6], intensity: 6, distance: 5, day: 0 }, // Next / contact
 ];
 
 const c1 = new ThreeColor();
@@ -69,7 +76,8 @@ export default function Lighting({
       );
     }
     practical.current.forEach((l, i) => {
-      if (l) l.intensity = practicalLights[i].intensity * lerp(d.practical, n.practical, k);
+      const p = practicalLights[i];
+      if (l) l.intensity = p.intensity * lerp(p.day, n.practical, k);
     });
     if (shadowPlane.current) shadowPlane.current.opacity = lerp(d.shadowOpacity, n.shadowOpacity, k);
   };

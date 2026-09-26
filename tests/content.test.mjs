@@ -12,6 +12,7 @@ import {
   contact,
   languages,
   workshopDisplays,
+  featuredSkills,
 } from '../src/content/portfolio.ts';
 import { explorationTopics, simulations } from '../src/content/exploration.ts';
 
@@ -25,6 +26,7 @@ const sourced = [
   ...courses,
   ...contact,
   languages,
+  featuredSkills,
   ...Object.values(workshopDisplays),
 ];
 
@@ -72,6 +74,17 @@ test('each workshop station is bound to exactly one CV project', () => {
     [...stations].sort((a, b) => a.localeCompare(b)),
     ['happy-human', 'mansour', 'real-estate', 'tobi'],
   );
+});
+
+test('the tech board only shows skills that are listed in the CV skills', () => {
+  const all = new Set(skills.flatMap((g) => g.items));
+  for (const s of featuredSkills.items) assert.ok(all.has(s), s);
+});
+
+test('public status line is exact and never claims Omar built TOBi', () => {
+  assert.equal(identity.status, 'Currently working at VOIS, TOBi UK');
+  const publicCopy = JSON.stringify({ identity, roles, projects });
+  assert.ok(!/building TOBi|built TOBi|Backend \/ Full-Stack/i.test(publicCopy));
 });
 
 test('AI exploration stays labelled as learning, never as professional experience', () => {

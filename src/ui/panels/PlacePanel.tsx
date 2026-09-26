@@ -16,7 +16,7 @@ import Sheet from './Sheet';
 
 const titles: Record<DestinationId, { title: string; lead: string }> = {
   about: { title: 'Who I am', lead: 'The desk where the trail starts.' },
-  experience: { title: 'The career trail', lead: 'From engineering workshops to building TOBi — each step on the trail is a role from my CV.' },
+  experience: { title: 'The career trail', lead: 'From engineering workshops to software engineering — each step on the trail is a role from my CV.' },
   projects: { title: 'The Project Workshop', lead: 'Every bench in the workshop is a project from my CV. Screens and models are illustrations, not client systems.' },
   ai: { title: 'AI Lab', lead: 'What I am exploring now. Experiments run locally in your browser.' },
   skills: { title: 'The toolbench', lead: 'Technologies from my CV, grouped by where I use them.' },

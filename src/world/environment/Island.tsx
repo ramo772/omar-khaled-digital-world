@@ -4,9 +4,9 @@ import { island } from '@/src/data/world-map';
 import { material } from '../materials/registry';
 import { canvasTexture } from '../materials/canvas';
 import { deckGrid, plaque } from '../materials/painters';
-import { Box, Panel, Rock, Tree } from './Primitives';
+import { Box, Panel } from './Primitives';
 
-function roundedRect(hx: number, hz: number, r: number) {
+export function roundedRect(hx: number, hz: number, r: number) {
   const s = new Shape();
   s.moveTo(-hx + r, -hz);
   s.lineTo(hx - r, -hz);
@@ -20,14 +20,13 @@ function roundedRect(hx: number, hz: number, r: number) {
   return s;
 }
 
-/** Moss beds: nature as a supporting accent, never the identity. */
+/** Moss beds at ground level: nature as a supporting accent, never the identity. */
 const beds: [number, number, number, number][] = [
   [-9.1, -2.4, 1.3, 1.6],
   [9.2, 1.9, 1.1, 1.7],
   [-2.6, 6.0, 1.7, 0.8],
-  [3.1, 5.9, 1.4, 0.8],
-  [-0.9, -6.3, 2.4, 0.6],
-  [9.3, -5.3, 1.0, 1.1],
+  [8.9, 5.5, 1.1, 0.8],
+  [-9.5, 4.8, 0.9, 1.1],
 ];
 
 export default function Island({ name }: { name: string }) {
@@ -76,23 +75,6 @@ export default function Island({ name }: { name: string }) {
       />
       {beds.map(([x, z, w, d], i) => (
         <Box key={i} position={[x, 0.03, z]} size={[w, 0.06, d]} m="moss" shadow={false} />
-      ))}
-      <Tree position={[-9.2, 0, -1.9]} scale={1.15} />
-      <Tree position={[9.55, 0, 1.55]} scale={0.9} />
-      <Tree position={[-2.4, 0, 6.1]} scale={0.8} />
-      <Tree position={[2.9, 0, 6.0]} scale={0.7} />
-      <Tree position={[-0.2, 0, -6.35]} scale={1.05} />
-      <Tree position={[9.3, 0, -5.4]} scale={0.95} />
-      {(
-        [
-          [-9.6, 5.2, 0.34],
-          [4.6, -6.3, 0.3],
-          [9.7, 4.9, 0.26],
-          [-6.0, -5.9, 0.36],
-          [0.6, 6.4, 0.24],
-        ] as const
-      ).map(([x, z, s], i) => (
-        <Rock key={i} position={[x, s * 0.45, z]} scale={[s * 1.3, s * 0.8, s]} />
       ))}
     </group>
   );

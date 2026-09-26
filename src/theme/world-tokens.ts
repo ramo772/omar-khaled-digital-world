@@ -24,6 +24,10 @@ export const palette = {
   path: { day: '#c3b391', night: '#4f4c50', roughness: 1 },
   trace: { day: '#c98a5a', night: '#f0a25c', emissive: '#f0a25c', glow: [0, 1.4] },
   stone: { day: '#e6dfcc', night: '#6b6e78', roughness: 0.95 },
+  wall: { day: '#cdbd9b', night: '#4b4b55', roughness: 1 },
+  wallCap: { day: '#e4d8bc', night: '#5d5e6a', roughness: 1 },
+  grass: { day: '#b7c296', night: '#44544a', roughness: 1 },
+  water: { day: '#86c4c4', night: '#1d5663', emissive: '#4fc0c7', glow: [0.06, 0.45], roughness: 0.18, metalness: 0.1 },
 
   // Architecture
   cream: { day: '#f0e9d8', night: '#aaa392', roughness: 0.85 },
@@ -46,6 +50,8 @@ export const palette = {
 
   // Light sources
   lampBulb: { day: '#f4ead2', night: '#ffd49a', emissive: '#ffc77d', glow: [0, 3.2] },
+  /** Workshop and desk lamps: softly on by day, warm and bright at night. */
+  interiorLamp: { day: '#ffe9bf', night: '#ffd49a', emissive: '#ffc77d', glow: [0.9, 3.4] },
   ledGreen: { day: '#6fbf7c', night: '#5ee07a', emissive: '#5ee07a', glow: [0.35, 2.4] },
   ledAmber: { day: '#e9b04a', night: '#ffc15a', emissive: '#ffb84a', glow: [0.35, 2.4] },
   ledRed: { day: '#dc6a52', night: '#ff6e52', emissive: '#ff6a4d', glow: [0.3, 2.2] },

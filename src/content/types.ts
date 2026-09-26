@@ -26,11 +26,9 @@ export interface Identity extends Sourced {
   currentOrganization: string;
   shortOrganization: string;
   currentProject: string;
-  currentProjectNote: string;
-  /** One-sentence stack summary for the hero. */
-  pitch: string;
-  focus: string;
-  /** From Omar's brief, not the CV — always presented as exploration. */
+  /** Exact public status line used in the hero, Quick View and metadata. */
+  status: string;
+  /** From Omar's brief, not the CV — shown only when the AI Lab feature is on. */
   exploring: string;
   summary: string;
   origin: string;
@@ -107,7 +105,7 @@ export interface Course extends Sourced {
 }
 
 export interface ContactChannel extends Sourced {
-  kind: 'email' | 'linkedin' | 'location';
+  kind: 'email' | 'linkedin' | 'github' | 'location';
   label: string;
   value: string;
   href?: string;

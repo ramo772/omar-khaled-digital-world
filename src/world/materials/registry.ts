@@ -75,11 +75,23 @@ export function texturedMaterial(texture: Texture, glow: Glow = 'screen'): MeshS
   return entry.material;
 }
 
+const listeners = new Set<(k: number) => void>();
+
+/** For bespoke materials (light pools, water streaks): called with the current and every future night mix. */
+export function onNightMix(listener: (k: number) => void) {
+  listeners.add(listener);
+  listener(nightMix);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 /** 0 = daylight, 1 = night. Called by the lighting rig while it tweens. */
 export function setNightMix(k: number) {
   nightMix = k;
   materials.forEach(({ material: m, key }) => tint(m, key, k));
   textured.forEach(({ material: m, glow }) => (m.emissiveIntensity = lerp(glow[0], glow[1], k)));
+  listeners.forEach((l) => l(k));
 }
 
 export const getNightMix = () => nightMix;

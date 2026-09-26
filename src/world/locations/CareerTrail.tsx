@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { education, roles } from '@/src/content/portfolio';
 import { trail } from '@/src/data/world-map';
-import { flag, tag } from '../materials/painters';
+import { tag, yearCard } from '../materials/painters';
 import { ink } from '../materials/canvas';
 import { Blink, Bob, Spin } from '../environment/Animated';
 import { Box, Cone, Cylinder, Led, Monitor, Panel } from '../environment/Primitives';
@@ -124,43 +124,49 @@ export default function CareerTrail({ animate }: { animate: boolean }) {
   const [x0, z0] = trail.from;
   const [x1, z1] = trail.to;
   const n = milestones.length;
+  const len = Math.hypot(x1 - x0, z1 - z0);
+  const dir = { x: (x1 - x0) / len, z: (z1 - z0) / len };
+  const yaw = Math.atan2(dir.x, dir.z);
+  // Away from the camera (the outer, retaining side of the staircase).
+  const away = { x: -dir.z, z: dir.x };
+  if (away.x * 0.53 + away.z * 0.85 > 0) {
+    away.x = -away.x;
+    away.z = -away.z;
+  }
+  const stepLength = len / (n - 1) + 0.02;
   return (
     <group>
       {milestones.map((m, i) => {
         const t = n === 1 ? 0 : i / (n - 1);
         const x = x0 + (x1 - x0) * t;
         const z = z0 + (z1 - z0) * t;
-        const h = 0.14 + i * 0.09;
+        const h = 0.14 + i * 0.1;
         const software = m.era === 'software';
+        const accent = m.current ? '#df7950' : software ? '#7fc4b8' : '#e8c46f';
+        const cardY = h + (m.id === 'vois' ? 1.72 : 1.18);
         return (
           <group key={m.id} position={[x, 0, z]}>
-            <Box position={[0, h / 2, 0]} size={[0.82, h, 0.82]} m={software ? 'seafoam' : m.era === 'origin' ? 'stone' : 'timber'} />
-            <Box position={[0, h + 0.012, 0]} size={[0.86, 0.025, 0.86]} m={software ? 'graphite' : 'steel'} />
+            {/* One stair step of the rising trail */}
+            <Box position={[0, h / 2, 0]} size={[0.96, h, stepLength]} rotation={[0, yaw, 0]} m={software ? 'seafoam' : m.era === 'origin' ? 'stone' : 'timber'} />
+            <Box position={[0, h + 0.012, 0]} size={[1.0, 0.025, stepLength]} rotation={[0, yaw, 0]} m={software ? 'graphite' : 'wallCap'} />
+            {/* Stepped retaining wall on the outer side */}
+            <Box position={[away.x * 0.53, (h + 0.32) / 2, away.z * 0.53]} size={[0.12, h + 0.32, stepLength]} rotation={[0, yaw, 0]} m="wall" />
+            {/* Step light on the open edge (glows at night) */}
+            <Box position={[-away.x * 0.47, h + 0.03, -away.z * 0.47]} size={[0.05, 0.03, stepLength * 0.7]} rotation={[0, yaw, 0]} m="trace" shadow={false} />
             <group position={[0, h + 0.025, 0]} rotation={[0, FACE_CAMERA, 0]}>
               <Prop id={m.id} animate={animate} />
             </group>
-            {/* Year flag, facing the path */}
-            <group position={[0.5, 0, 0.42]} rotation={[0, FACE_CAMERA, 0]}>
-              <Box position={[0, (h + 0.95) / 2, 0]} size={[0.035, h + 0.95, 0.035]} m="graphite" />
+            {/* Year card on a post, behind the prop */}
+            <group position={[away.x * 0.34, 0, away.z * 0.34]} rotation={[0, FACE_CAMERA, 0]}>
+              <Box position={[0, cardY / 2, -0.03]} size={[0.04, cardY, 0.04]} m="graphite" />
               <Panel
-                id={`trail-flag:${m.id}`}
-                paint={flag(m.year, m.short, m.current ? '#df7950' : software ? '#7fa89f' : '#c9a57a')}
-                size={[0.62, 0.36]}
-                px={[248, 144]}
-                position={[0.33, h + 0.76, 0]}
-                glow="sign"
+                id={`trail-card:${m.id}`}
+                paint={yearCard(m.year, m.short, accent, (i + 1) / n, m.current)}
+                size={[0.74, 0.44]}
+                px={[296, 176]}
+                position={[0, cardY, 0]}
               />
             </group>
-            {/* Progress cable to the next milestone (glows at night) */}
-            {i < n - 1 && (
-              <Box
-                position={[(x1 - x0) / (n - 1) / 2, 0.05, (z1 - z0) / (n - 1) / 2]}
-                size={[0.05, 0.04, Math.hypot((x1 - x0) / (n - 1), (z1 - z0) / (n - 1))]}
-                rotation={[0, Math.atan2(x1 - x0, z1 - z0), 0]}
-                m="trace"
-                shadow={false}
-              />
-            )}
           </group>
         );
       })}

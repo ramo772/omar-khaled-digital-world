@@ -9,11 +9,11 @@ import { RADIUS } from '@/src/lib/movement';
  */
 export const AVATAR = {
   /** Feet at y = 0, top of hair at ~height. Y-up, facing +Z. */
-  height: 1.95,
+  height: 2.05,
   /** Horizontal collider radius — independent of the visual model. */
   colliderRadius: RADIUS,
   /** Height of the "you are here" marker above the head. */
-  markerHeight: 2.45,
+  markerHeight: 2.62,
 } as const;
 
 /** Written by the controller every frame, read by the model's animation. */

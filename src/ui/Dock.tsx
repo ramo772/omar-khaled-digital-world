@@ -27,6 +27,9 @@ export default function Dock({ current, onSelect }: { current: DestinationId | n
               >
                 <Icon aria-hidden="true" size={18} strokeWidth={1.7} />
                 <span className="dock-label">{d.label}</span>
+                <span className="dock-label-short" aria-hidden="true">
+                  {d.short}
+                </span>
               </button>
             </li>
           );

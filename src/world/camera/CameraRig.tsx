@@ -20,11 +20,14 @@ export default function CameraRig({
   follow,
   controls,
   reducedMotion,
+  intro = false,
 }: {
   zoom: number;
   follow: boolean;
   controls: RefObject<Controls>;
   reducedMotion: boolean;
+  /** While the intro loader is up, hold slightly pulled back; glide in when it leaves. */
+  intro?: boolean;
 }) {
   const { camera, size } = useThree();
   const focus = useRef(OVERVIEW.clone());
@@ -39,7 +42,7 @@ export default function CameraRig({
     // Phones trade the island's rounded corners for a larger, more legible world.
     const fit = size.width < 700 ? Math.min(size.width / 23.5, size.height / 14) : Math.min(size.width / 27, size.height / 17, 50);
     const closer = size.width < 700 ? 2.05 : size.width < 1100 ? 1.75 : 1.6;
-    const targetZoom = fit * zoom * (follow ? closer : 1);
+    const targetZoom = fit * zoom * (follow ? closer : 1) * (intro && !reducedMotion ? 0.84 : 1);
     if (follow) {
       const p = controls.current.position;
       goal.set(Math.max(-LIMIT.x, Math.min(LIMIT.x, p.x)), 0.5, Math.max(LIMIT.zMin, Math.min(LIMIT.zMax, p.z)));

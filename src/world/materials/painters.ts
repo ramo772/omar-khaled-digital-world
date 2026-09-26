@@ -1,4 +1,5 @@
 import { arrow, bars, fonts, ink, roundRect, text, type Painter } from './canvas';
+import { omarLook } from '../character/avatar-look';
 
 /**
  * Every painter that shows words takes them as arguments, so on-screen text
@@ -245,6 +246,21 @@ export const drawers =
     });
   };
 
+/** Career-trail year card: a small lit screen with the year, a label and a progress bar. */
+export const yearCard =
+  (year: string, label: string, accent: string, progress: number, current = false): Painter =>
+  (g, w, h) => {
+    roundRect(g, 2, 2, w - 4, h - 4, 12, '#15232a', current ? accent : '#2c434b', current ? 5 : 3);
+    text(g, year, 18, h * 0.36, fonts.sans(h * 0.34, 800), '#f4eee0');
+    text(g, label, 18, h * 0.66, fonts.mono(Math.min(h * 0.15, (w - 36) / (label.length * 0.62)), 600), '#9fbab3');
+    roundRect(g, 18, h - 22, w - 36, 8, 4, '#233a41');
+    roundRect(g, 18, h - 22, (w - 36) * progress, 8, 4, accent);
+    if (current) {
+      roundRect(g, w - 74, 14, 58, 24, 12, accent);
+      text(g, 'NOW', w - 45, 27, fonts.mono(13, 800), '#1a110b', 'center');
+    }
+  };
+
 export const flag =
   (top: string, bottom: string, color: string): Painter =>
   (g, w, h) => {
@@ -271,12 +287,142 @@ export const deckGrid: Painter = (g, w, h) => {
   g.stroke();
 };
 
-export const tshirt: Painter = (g, w, h) => {
-  // Off-white knit with thin dark stripes, inspired by the reference photo.
-  g.fillStyle = '#ece7de';
+/** A single lit technology tile for the Skills tech board. */
+export const techTile =
+  (name: string, accent: string): Painter =>
+  (g, w, h) => {
+    roundRect(g, 3, 3, w - 6, h - 6, 14, '#18262c', accent, 3);
+    g.fillStyle = accent;
+    g.beginPath();
+    g.arc(24, 24, 7, 0, Math.PI * 2);
+    g.fill();
+    text(g, name, w / 2, h / 2 + 6, fonts.sans(Math.min(h * 0.3, (w - 30) / (name.length * 0.56)), 800), '#f4eee0', 'center');
+    g.fillStyle = accent;
+    g.fillRect(w / 2 - 22, h - 26, 44, 4);
+  };
+
+/** Omar's profile card on the About monitor, with a tiny blocky portrait. */
+export const profileCard =
+  (name: string, role: string, status: string): Painter =>
+  (g, w, h) => {
+    screenFrame(g, w, h, 'about.me', ink.seafoam);
+    const cx = 64;
+    const cy = h / 2 + 12;
+    g.fillStyle = '#243a42';
+    g.beginPath();
+    g.arc(cx, cy, 44, 0, Math.PI * 2);
+    g.fill();
+    // blocky face: hair, skin, glasses, beard
+    g.fillStyle = '#1d1714';
+    for (const [x, y, r] of [
+      [-20, -30, 13],
+      [-4, -35, 14],
+      [13, -31, 13],
+      [24, -20, 10],
+      [-26, -18, 10],
+    ]) {
+      g.beginPath();
+      g.arc(cx + x, cy + y, r, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = '#9e6a4e';
+    g.fillRect(cx - 24, cy - 22, 48, 46);
+    g.fillStyle = '#241b17';
+    g.fillRect(cx - 24, cy + 6, 48, 18);
+    g.fillStyle = '#f3ece2';
+    g.fillRect(cx - 8, cy + 9, 16, 4);
+    g.strokeStyle = '#111';
+    g.lineWidth = 4;
+    for (const dx of [-11, 11]) {
+      g.beginPath();
+      g.arc(cx + dx, cy - 6, 8, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.fillStyle = '#ece7de';
+    g.fillRect(cx - 30, cy + 30, 60, 14);
+    text(g, name, 128, 70, fonts.sans(26, 750), ink.text);
+    text(g, role, 128, 104, fonts.mono(15, 600), ink.amber);
+    text(g, status, 128, 136, fonts.sans(Math.min(15, (w - 140) / (status.length * 0.5)), 500), ink.dim);
+  };
+
+/** Contact terminal: one line per channel label. */
+export const contactScreen =
+  (title: string, lines: string[]): Painter =>
+  (g, w, h) => {
+    screenFrame(g, w, h, title, ink.coral);
+    text(g, 'Let’s talk →', 18, 58, fonts.sans(24, 750), ink.cream);
+    lines.forEach((l, i) => {
+      roundRect(g, 18, 84 + i * 36, w - 36, 28, 8, '#223940');
+      text(g, l, 32, 98 + i * 36, fonts.mono(15, 600), ink.text);
+    });
+  };
+
+/** A generic sprint board: columns of sticky notes (no invented content). */
+export const sprintBoard: Painter = (g, w, h) => {
+  g.fillStyle = '#f7f3e8';
   g.fillRect(0, 0, w, h);
-  for (let y = 3; y < h; y += 10) {
-    g.fillStyle = (y / 10) % 3 < 1 ? '#6a3440' : '#2d3553';
-    g.fillRect(0, y, w, 3);
+  const cols = ['TODO', 'DOING', 'DONE'];
+  const colW = w / 3;
+  cols.forEach((c, i) => {
+    text(g, c, i * colW + 14, 22, fonts.mono(15, 700), '#5d6b66');
+    if (i) {
+      g.fillStyle = '#ddd5c3';
+      g.fillRect(i * colW, 10, 2, h - 20);
+    }
+    const colors = ['#f0cf7a', '#9fd3c7', '#f2a07e'];
+    for (let n = 0; n < 3 - (i === 1 ? 1 : 0); n++) {
+      g.fillStyle = colors[(i + n) % 3];
+      g.fillRect(i * colW + 14, 42 + n * 50, colW - 28, 40);
+      bars(g, i * colW + 22, 52 + n * 50, [colW - 60, colW - 80], 'rgba(40,50,50,0.35)', 5, 11);
+    }
+  });
+};
+
+/** Name tag above the avatar, in the spirit of a sports-game player indicator. */
+export const playerTag =
+  (name: string): Painter =>
+  (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    roundRect(g, 4, 6, w - 8, h - 12, (h - 12) / 2, '#df7950', '#fff7ec', 4);
+    text(g, name, w / 2, h / 2 + 1, fonts.sans(h * 0.42, 800), '#fff7ec', 'center');
+  };
+
+/** Soft radial falloff, used for lamp light pools on the ground. */
+export const glowDisc: Painter = (g, w, h) => {
+  const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+  r.addColorStop(0, 'rgba(255,255,255,0.95)');
+  r.addColorStop(0.3, 'rgba(255,255,255,0.5)');
+  r.addColorStop(0.65, 'rgba(255,255,255,0.14)');
+  r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, w, h);
+};
+
+/** Faint flow lines that slide along the stream. */
+export const waterStreaks: Painter = (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  let seed = 5;
+  const rand = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 18; i++) {
+    const x = 6 + rand() * (w - 12);
+    const y = rand() * h;
+    const len = 10 + rand() * 26;
+    g.strokeStyle = `rgba(255,255,255,${0.35 + rand() * 0.4})`;
+    g.lineWidth = 1.5 + rand() * 1.5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + (rand() - 0.5) * 3, y + len);
+    g.stroke();
+  }
+};
+
+export const tshirt: Painter = (g, w, h) => {
+  // Light cream knit with thin dark horizontal stripes, from the reference photo.
+  g.fillStyle = omarLook.shirt;
+  g.fillRect(0, 0, w, h);
+  for (let y = 4; y < h; y += 9) {
+    g.fillStyle = (y / 9) % 4 < 1 ? omarLook.stripeB : omarLook.stripeA;
+    g.fillRect(0, y, w, 2);
   }
 };

@@ -12,12 +12,14 @@ import {
   jobsBoard,
   phoneScreen,
   plaque,
+  sprintBoard,
   streamScreen,
   tag,
   terminal,
 } from '../materials/painters';
 import { Blink, Bob, Spin } from '../environment/Animated';
-import { Box, Cylinder, Led, Monitor, Panel, type V3 } from '../environment/Primitives';
+import { Box, Cone, Cylinder, Led, Monitor, Panel, Rock, type V3 } from '../environment/Primitives';
+import { LightPools } from '../environment/Landscape';
 import Landmark from '../interaction/Landmark';
 
 const SLAB = 0.16;
@@ -143,6 +145,92 @@ function HappyHuman({ animate }: { animate: boolean }) {
   );
 }
 
+/** Warm pendant lamp hanging from the roof beam over a bench. */
+function Pendant({ x, z }: { x: number; z: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <Box position={[0, ROOF - 0.32, 0]} size={[0.015, 0.64, 0.015]} m="graphite" shadow={false} />
+      <Cone position={[0, ROOF - 0.7, 0]} radius={0.2} height={0.18} m="graphite" />
+      <Box position={[0, ROOF - 0.8, 0]} size={[0.14, 0.05, 0.14]} m="interiorLamp" shadow={false} />
+    </group>
+  );
+}
+
+function Plant({ position, scale = 1 }: { position: V3; scale?: number }) {
+  return (
+    <group position={position} scale={scale}>
+      <Cylinder position={[0, 0.12, 0]} radius={0.12} height={0.24} m="pot" />
+      <Rock position={[0, 0.34, 0]} scale={[0.2, 0.24, 0.18]} m="leafA" />
+      <Rock position={[0.06, 0.48, -0.02]} scale={[0.12, 0.16, 0.12]} m="leafB" />
+    </group>
+  );
+}
+
+/** Shelf wall: books, boxes and a plant — the lived-in part of the workshop. */
+function Shelves() {
+  const colors = ['signal', 'seafoam', 'butter', 'graphite', 'cream'] as const;
+  return (
+    <group position={[1.25, SLAB, -HZ + 0.25]}>
+      {[-0.55, 0.55].map((dx) => (
+        <Box key={dx} position={[dx, 0.95, 0]} size={[0.05, 1.9, 0.3]} m="graphite" />
+      ))}
+      {[0.45, 0.95, 1.45].map((y, row) => (
+        <group key={y}>
+          <Box position={[0, y, 0]} size={[1.14, 0.04, 0.3]} m="timber" />
+          {Array.from({ length: 5 - row }, (_, i) => (
+            <Box
+              key={i}
+              position={[-0.42 + i * 0.13 + row * 0.05, y + 0.12, 0]}
+              size={[0.08, 0.2 + ((i + row) % 3) * 0.03, 0.22]}
+              m={colors[(i + row) % colors.length]}
+            />
+          ))}
+        </group>
+      ))}
+      <Plant position={[0.36, 1.47, 0]} scale={0.7} />
+      <Monitor id="ws-dashboard" paint={jobsBoard('status', ['build', 'tests', 'deploy'])} position={[0, 2.25, 0.05]} width={0.8} height={0.46} px={[300, 170]} stand={false} />
+    </group>
+  );
+}
+
+/** A planning table with a miniature system model: blocks joined by glowing links. */
+function SystemModel({ animate }: { animate: boolean }) {
+  const nodes: [number, number, number, 'seafoam' | 'cream' | 'signal' | 'butter'][] = [
+    [-0.38, -0.12, 0.14, 'seafoam'],
+    [-0.1, 0.1, 0.1, 'cream'],
+    [0.16, -0.1, 0.18, 'signal'],
+    [0.4, 0.12, 0.12, 'butter'],
+  ];
+  return (
+    <group position={[-0.95, SLAB, -1.05]}>
+      <Box position={[0, 0.74, 0]} size={[1.25, 0.06, 0.72]} m="timber" />
+      {[-0.55, 0.55].map((dx) => (
+        <Box key={dx} position={[dx, 0.37, 0]} size={[0.06, 0.72, 0.6]} m="graphite" />
+      ))}
+      <Box position={[0, 0.78, 0]} size={[1.05, 0.02, 0.55]} m="glass" shadow={false} />
+      {nodes.map(([x, z, h, m], i) => (
+        <Box key={i} position={[x, 0.8 + h / 2, z]} size={[0.13, h, 0.13]} m={m} />
+      ))}
+      {nodes.slice(1).map(([x, z], i) => {
+        const [px, pz] = nodes[i];
+        return (
+          <Box
+            key={i}
+            position={[(x + px) / 2, 0.81, (z + pz) / 2]}
+            size={[Math.hypot(x - px, z - pz), 0.012, 0.02]}
+            rotation={[0, -Math.atan2(z - pz, x - px), 0]}
+            m="wire"
+            shadow={false}
+          />
+        );
+      })}
+      <Blink animate={animate} period={1.3}>
+        <Led position={[0.4, 1.0, 0.12]} m="ledGreen" size={0.05} />
+      </Blink>
+    </group>
+  );
+}
+
 function Rack({ x, animate, phase }: { x: number; animate: boolean; phase: number }) {
   return (
     <group position={[x, SLAB, -1.72]}>
@@ -230,6 +318,29 @@ export default function ProjectWorkshop({
       ))}
       <Rack x={2.55} animate={animate} phase={0} />
       <Rack x={3.25} animate={animate} phase={0.4} />
+      <Shelves />
+      <SystemModel animate={animate} />
+      {/* Sprint board on an easel */}
+      <group position={[-3.15, SLAB, -1.25]} rotation={[0, 0.5, 0]}>
+        {[-0.38, 0.38].map((dx) => (
+          <Box key={dx} position={[dx, 0.75, 0]} size={[0.04, 1.5, 0.04]} m="graphite" />
+        ))}
+        <Box position={[0, 1.12, -0.01]} size={[0.92, 0.66, 0.03]} m="graphite" />
+        <Panel id="ws-sprint" paint={sprintBoard} size={[0.86, 0.6]} px={[300, 210]} position={[0, 1.12, 0.008]} glow="sign" />
+      </group>
+      {/* Pendant lights and the warm pools they cast */}
+      {bays.map(({ x: bx }) => (
+        <Pendant key={bx} x={bx} z={BENCH_Z - 0.05} />
+      ))}
+      <LightPools
+        interior
+        items={[
+          ...bays.map(({ x: bx }) => ({ p: [bx, SLAB + 0.012, BENCH_Z + 0.55] as V3, s: [1.7, 1.2, 1] as V3, r: [-Math.PI / 2, 0, 0] as V3 })),
+          { p: [-0.95, SLAB + 0.012, -1.05], s: [1.8, 1.4, 1], r: [-Math.PI / 2, 0, 0] },
+        ]}
+      />
+      <Plant position={[-HX + 0.35, SLAB, -HZ + 0.4]} />
+      <Plant position={[HX - 0.3, SLAB, -0.45]} scale={0.9} />
       {/* Stations */}
       {bays.map(({ station, x: bx }) => {
         const p = byStation[station];

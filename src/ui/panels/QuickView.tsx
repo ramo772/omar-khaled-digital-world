@@ -26,7 +26,7 @@ export default function QuickView({
       wide
       eyebrow="Quick View · no walking required"
       title={identity.name}
-      description={`${identity.currentRole} at ${identity.shortOrganization} · ${identity.focus} · ${identity.location}`}
+      description={`${identity.currentRole} · ${identity.status}`}
     >
       <nav className="qv-nav" aria-label="Quick View sections">
         {profileSections.map((s) => (
