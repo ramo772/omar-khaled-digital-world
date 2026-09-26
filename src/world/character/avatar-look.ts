@@ -4,13 +4,14 @@
  * Plain data, no Three.js. Source of truth: Omar's real photo.
  */
 export const omarLook = {
-  // Medium warm tan / light-medium brown. Sampled from the photo and
-  // white-balanced against the off-white T-shirt (the museum light is very orange).
-  skin: '#cf9a73',
-  skinShade: '#b9835e',
-  hair: '#15100e',
-  beard: '#1a1310',
-  frames: '#0d0d0d',
+  // Light-medium warm tan. Deliberately held brighter than the orange museum
+  // lighting in the photo so Omar does not read too dark in the night scene.
+  skin: '#d8a27c',
+  skinShade: '#bd805f',
+  hair: '#0d0c0c',
+  hairHighlight: '#292526',
+  beard: '#121010',
+  frames: '#0a0a0b',
   eyes: '#1c1411',
   teeth: '#f7f2ea',
   lip: '#9a5646',
@@ -30,23 +31,31 @@ export const omarLook = {
  */
 export const headSpec = {
   center: 0.31,
-  rx: 0.28,
-  ry: 0.31,
-  rz: 0.26,
-  eyes: { x: 0.088, y: 0.345, w: 0.034, h: 0.042 },
-  /** Smaller, softly rectangular lenses; thin frame with a slightly heavier top rim. */
-  lens: { x: 0.09, y: 0.348, w: 0.142, h: 0.098, radius: 0.026, side: 0.016, top: 0.024 },
-  bridge: { y: 0.36, w: 0.038 },
-  brows: { x: 0.092, y: 0.425, w: 0.108, h: 0.026, tilt: 0.1 },
-  nose: { y: 0.272, w: 0.058, h: 0.075 },
-  moustache: { y: 0.207, w: 0.18, h: 0.034 },
+  rx: 0.26,
+  ry: 0.325,
+  rz: 0.245,
+  eyes: { x: 0.078, y: 0.35, w: 0.03, h: 0.038 },
+  /** Small, thin, softly rectangular lenses fitted close around the eyes. */
+  lens: {
+    x: 0.078,
+    y: 0.351,
+    w: 0.125,
+    h: 0.072,
+    radius: 0.012,
+    side: 0.008,
+    top: 0.012,
+  },
+  bridge: { y: 0.356, w: 0.032 },
+  brows: { x: 0.082, y: 0.416, w: 0.096, h: 0.022, tilt: 0.08 },
+  nose: { y: 0.275, w: 0.052, h: 0.072 },
+  moustache: { y: 0.211, w: 0.164, h: 0.03 },
   mouth: { y: 0.165, w: 0.11, h: 0.03 },
   /** Beard follows the jaw: bare upper cheeks, beard below this line (fuller at the chin). */
-  beardLine: { center: 0.228, side: 0.37 },
-  chin: { y: 0.03, rx: 0.13, ry: 0.075, z: 0.17 },
+  beardLine: { center: 0.225, side: 0.345 },
+  chin: { y: 0.025, rx: 0.115, ry: 0.06, z: 0.15 },
   /** Hairline: low at the back and sides, higher over the forehead. */
-  hairline: { front: 0.5, side: 0.36, back: 0.2 },
-  ears: { x: 0.278, y: 0.305 },
+  hairline: { front: 0.495, side: 0.405, back: 0.255 },
+  ears: { x: 0.258, y: 0.305 },
 } as const;
 
 /** z of the face surface at (x, y) on the head ellipsoid (0 outside it). */
